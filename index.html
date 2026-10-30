@@ -1762,6 +1762,18 @@ function getClientId() {
 
 async function callAuthFunction(name, body) {
   try {
+    // Multiplayer runs in transactional Postgres RPCs. The previous Edge
+    // Function deployments failed to boot and could not answer even CORS.
+    const rpc = name === 'match-join' ? 'bazaar_match_join' : name === 'match-next-day' ? 'bazaar_match_turn' : null;
+    if(rpc) {
+      if(!sb) return { ok: false, status: 0, data: { error: 'کتابخانه اتصال بارگذاری نشد. صفحه را تازه کن.' } };
+      const { data, error } = await sb.rpc(rpc, { body });
+      if(error) {
+        console.error('Multiplayer RPC failed:', rpc, error);
+        return { ok: false, status: Number(error.status) || 0, data: { error: 'ارتباط با سرور بازی برقرار نشد. دوباره تلاش کن.' } };
+      }
+      return { ok: !!data?.success, status: data?.success ? 200 : 400, data: data || { error: 'پاسخ سرور نامعتبر است.' } };
+    }
     const res = await fetch(`${FUNCTIONS_URL}/${name}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
@@ -2353,7 +2365,9 @@ function startWaitingPoll(matchId, isPlayer1, ctx) {
   if(randomPollInterval) clearInterval(randomPollInterval);
   randomPollInterval = setInterval(async () => {
     if(!sb) return;
-    const { data: m } = await sb.from('matches').select('id,status').eq('id', matchId).maybeSingle();
+    const { data: m, error } = await sb.from('matches').select('id,status').eq('id', matchId).maybeSingle();
+    // A transient network failure is not a deleted match.
+    if(error) return;
 
     if(m && m.status === 'active') {
       clearInterval(randomPollInterval); randomPollInterval = null;
@@ -2965,13 +2979,16 @@ function registerServiceWorker() {
 window.addEventListener('pagehide', () => {
   try {
     if(G && G._onlineMatchId && !G._matchFinished) {
-      const payload = JSON.stringify({
+      const payload = JSON.stringify({ body: {
         matchId: G._onlineMatchId, playerKey: G._playerKey,
         playerState: buildPlayerState(), action: 'sync',
-      });
-      if(navigator.sendBeacon) {
-        navigator.sendBeacon(`${FUNCTIONS_URL}/match-next-day`, new Blob([payload], { type:'application/json' }));
-      }
+      }});
+      // sendBeacon cannot attach the API key required by PostgREST.
+      fetch(`${SUPABASE_URL}/rest/v1/rpc/bazaar_match_turn`, {
+        method: 'POST', keepalive: true,
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+        body: payload,
+      }).catch(() => {});
     }
   } catch(e) {}
 });
