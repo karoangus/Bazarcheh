@@ -1,0 +1,4209 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>بازارچه دارک وب — نسخه ۱۲.۰</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;900&display=swap');
+
+/* ===== THEME VARIABLES ===== */
+:root {
+  --bg: #1a1208;
+  --bg2: #211608;
+  --bg3: #2a1d0a;
+  --panel: #2e200c;
+  --panel2: #3a2910;
+  --border: #5a3e1a;
+  --border2: #7a5520;
+  --accent: #c8941a;
+  --accent2: #e8b040;
+  --green: #4a8c2a;
+  --green2: #5cb030;
+  --green-light: #8ed060;
+  --red: #c03020;
+  --red2: #e84030;
+  --yellow: #d4a010;
+  --yellow2: #f0c030;
+  --blue: #2a6090;
+  --purple: #7040a0;
+  --cyan: #208080;
+  --text: #f0e8d0;
+  --text2: #c0a870;
+  --text3: #806840;
+  --shadow: rgba(0,0,0,0.5);
+  --glow: 0 0 12px rgba(200,148,26,0.3);
+  --card-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+[data-theme="light"] {
+  --bg: #f5f0e8;
+  --bg2: #ede5d8;
+  --bg3: #e0d5c0;
+  --panel: #faf6ee;
+  --panel2: #f0e8d8;
+  --border: #c8b080;
+  --border2: #a89060;
+  --accent: #8b5e10;
+  --accent2: #a07020;
+  --green: #2a6010;
+  --green2: #3a8018;
+  --green-light: #5aaa30;
+  --red: #a02010;
+  --red2: #c83020;
+  --yellow: #a07008;
+  --yellow2: #c09020;
+  --blue: #1a4870;
+  --purple: #502880;
+  --cyan: #106060;
+  --text: #2a1a08;
+  --text2: #604820;
+  --text3: #907040;
+  --shadow: rgba(0,0,0,0.15);
+  --glow: 0 0 12px rgba(139,94,16,0.2);
+  --card-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Vazirmatn', sans-serif;
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ===== OVERLAYS ===== */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.overlay.hidden { display: none !important; }
+
+.modal {
+  background: var(--panel);
+  border: 2px solid var(--border2);
+  border-radius: 20px;
+  padding: 32px;
+  max-width: 560px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--accent2), transparent);
+  border-radius: 20px 20px 0 0;
+}
+
+.modal-title {
+  font-size: 1.6rem; font-weight: 900;
+  color: var(--accent2);
+  text-align: center; margin-bottom: 6px;
+}
+.modal-subtitle {
+  color: var(--text3); font-size: 0.82rem;
+  text-align: center; margin-bottom: 24px;
+}
+
+/* ===== MODE CARDS ===== */
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+
+.mode-card {
+  background: var(--bg2);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  font-family: 'Vazirmatn', sans-serif;
+}
+.mode-card:hover { transform: translateY(-3px); box-shadow: var(--card-shadow); }
+.mode-card.selected { border-color: var(--accent2); background: var(--panel2); }
+.mode-card .mode-emoji { font-size: 1.8rem; margin-bottom: 4px; }
+.mode-card .mode-name { font-size: 1rem; font-weight: 800; margin-bottom: 6px; }
+.mode-card .mode-info { font-size: 0.7rem; color: var(--text2); line-height: 1.7; }
+.mode-card.easy .mode-name { color: var(--green2); }
+.mode-card.medium .mode-name { color: var(--yellow2); }
+.mode-card.hard .mode-name { color: #e07030; }
+.mode-card.pro .mode-name { color: var(--red2); }
+.mode-card.easy.selected { border-color: var(--green2); }
+.mode-card.medium.selected { border-color: var(--yellow2); }
+.mode-card.hard.selected { border-color: #e07030; }
+.mode-card.pro.selected { border-color: var(--red2); }
+
+/* ===== BUTTONS ===== */
+.btn {
+  border: none; border-radius: 10px; padding: 10px 20px;
+  font-family: 'Vazirmatn', sans-serif; font-size: 0.88rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:active { transform: scale(0.96); }
+.btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #1a0a00; }
+.btn-primary:hover { box-shadow: var(--glow); }
+.btn-success { background: linear-gradient(135deg, var(--green), var(--green2)); color: #fff; }
+.btn-success:hover { filter: brightness(1.1); }
+.btn-danger { background: linear-gradient(135deg, var(--red), var(--red2)); color: #fff; }
+.btn-danger:hover { filter: brightness(1.1); }
+.btn-ghost {
+  background: var(--bg2); border: 1px solid var(--border);
+  color: var(--text2);
+}
+.btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+.btn-sm { padding: 6px 14px; font-size: 0.78rem; border-radius: 8px; }
+.btn-xs { padding: 4px 10px; font-size: 0.72rem; border-radius: 6px; }
+.btn-full { width: 100%; justify-content: center; }
+
+/* ===== HEADER ===== */
+.game-header {
+  background: var(--panel);
+  border-bottom: 2px solid var(--border);
+  padding: 10px 16px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 12px var(--shadow);
+}
+
+.logo { font-size: 1rem; font-weight: 900; color: var(--accent2); white-space: nowrap; }
+
+.stat-chip {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 5px 12px;
+  font-size: 0.78rem; display: flex; align-items: center; gap: 5px;
+}
+.stat-chip .lbl { color: var(--text3); }
+.stat-chip .val { font-weight: 800; }
+.val-gold { color: var(--accent2); }
+.val-green { color: var(--green2); }
+.val-red { color: var(--red2); }
+.val-yellow { color: var(--yellow2); }
+.val-cyan { color: #30b0b0; }
+
+.header-right { margin-right: auto; display: flex; gap: 6px; align-items: center; }
+
+.theme-toggle {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 5px 10px; cursor: pointer;
+  font-size: 1rem; transition: all 0.2s;
+}
+.theme-toggle:hover { border-color: var(--border2); }
+
+/* ===== MAIN LAYOUT ===== */
+#gameUI { display: none; flex-direction: column; min-height: 100vh; }
+#gameUI.active { display: flex; }
+
+.game-body {
+  display: grid;
+  grid-template-columns: 200px 1fr 220px;
+  flex: 1;
+  overflow: hidden;
+  height: calc(100vh - 56px);
+}
+
+@media (max-width: 768px) {
+  .game-body { grid-template-columns: 1fr; height: auto; }
+  .left-panel, .right-panel { display: none; }
+  .left-panel.mobile-show, .right-panel.mobile-show { display: flex; }
+}
+
+/* ===== LEFT PANEL ===== */
+.left-panel {
+  background: var(--panel);
+  border-left: 2px solid var(--border);
+  padding: 14px 10px;
+  display: flex; flex-direction: column; gap: 10px;
+  overflow-y: auto;
+}
+
+.nav-item {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 9px 12px;
+  cursor: pointer; font-family: 'Vazirmatn', sans-serif;
+  color: var(--text2); font-size: 0.82rem; font-weight: 600;
+  width: 100%; text-align: right;
+  transition: all 0.15s; display: flex; align-items: center; gap: 8px;
+}
+.nav-item:hover { border-color: var(--border2); color: var(--text); }
+.nav-item.active { border-color: var(--accent2); color: var(--accent2); background: var(--panel2); }
+.nav-item .nav-icon { font-size: 1.1rem; }
+
+.progress-section { }
+.prog-label { font-size: 0.68rem; color: var(--text3); display: flex; justify-content: space-between; margin-bottom: 3px; }
+.prog-bar { background: var(--bg); border-radius: 4px; height: 7px; overflow: hidden; margin-bottom: 8px; }
+.prog-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+.prog-money { background: linear-gradient(90deg, var(--green), var(--green2)); }
+.prog-days { background: linear-gradient(90deg, var(--yellow), var(--accent2)); }
+
+.next-day-btn {
+  background: linear-gradient(135deg, var(--green), var(--green2));
+  border: none; border-radius: 12px; padding: 12px;
+  cursor: pointer; font-family: 'Vazirmatn', sans-serif;
+  color: #fff; font-size: 0.95rem; font-weight: 800;
+  width: 100%; transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(74,140,42,0.4);
+}
+.next-day-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.next-day-btn:active { transform: scale(0.97); }
+.next-day-btn.warning { background: linear-gradient(135deg, var(--red), var(--red2)); }
+
+.section-sep { border: none; border-top: 1px solid var(--border); margin: 2px 0; }
+.section-lbl { font-size: 0.65rem; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; }
+
+/* ===== CENTER PANEL ===== */
+.center-panel { background: var(--bg2); overflow-y: auto; padding: 16px; }
+
+/* ===== RIGHT PANEL ===== */
+.right-panel {
+  background: var(--panel);
+  border-right: 2px solid var(--border);
+  padding: 14px 10px;
+  display: flex; flex-direction: column; gap: 10px;
+  overflow-y: auto;
+}
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: var(--card-shadow);
+}
+.card-title {
+  font-size: 0.72rem; font-weight: 800;
+  color: var(--text3); text-transform: uppercase;
+  letter-spacing: 1.5px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.card-title span { font-size: 1rem; }
+
+/* ===== MARKET TABLE ===== */
+.mkt-table { width: 100%; border-collapse: collapse; }
+.mkt-table th {
+  text-align: right; font-size: 0.7rem; color: var(--text3);
+  font-weight: 700; padding: 6px 8px;
+  border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.mkt-table td {
+  padding: 9px 8px; font-size: 0.82rem;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  vertical-align: middle;
+}
+.mkt-table tr:last-child td { border-bottom: none; }
+.mkt-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+.item-emoji { font-size: 1.2rem; }
+.price-up { color: var(--green2); font-weight: 800; }
+.price-down { color: var(--red2); font-weight: 800; }
+.price-same { color: var(--text); font-weight: 800; }
+
+.badge {
+  font-size: 0.68rem; padding: 2px 7px; border-radius: 20px; font-weight: 700;
+}
+.badge-up { background: rgba(90,176,48,0.2); color: var(--green2); }
+.badge-down { background: rgba(232,64,48,0.2); color: var(--red2); }
+.badge-flat { background: rgba(255,255,255,0.08); color: var(--text3); }
+
+.action-row { display: flex; gap: 5px; align-items: center; }
+.qty-in {
+  background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 6px; color: var(--text);
+  font-family: 'Vazirmatn', sans-serif; font-size: 0.8rem;
+  padding: 4px 6px; width: 52px; text-align: center;
+}
+.qty-in:focus { outline: none; border-color: var(--accent2); }
+
+/* ===== INVENTORY ITEMS ===== */
+.inv-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; background: var(--bg2);
+  border-radius: 8px; margin-bottom: 5px;
+  border: 1px solid var(--border); font-size: 0.8rem;
+}
+.inv-row-name { display: flex; align-items: center; gap: 6px; }
+.inv-qty { font-weight: 800; color: #30c0c0; }
+.inv-lock { font-size: 0.68rem; color: var(--yellow2); }
+.inv-pnl-pos { font-size: 0.68rem; color: var(--green2); }
+.inv-pnl-neg { font-size: 0.68rem; color: var(--red2); }
+
+/* ===== CAPACITY BAR ===== */
+.cap-bar-wrap { margin-top: 6px; }
+.cap-bar { background: var(--bg); border-radius: 4px; height: 6px; overflow: hidden; }
+.cap-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+.cap-normal { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+.cap-dark { background: linear-gradient(90deg, var(--purple), #a060e0); }
+.cap-full { background: var(--red2); }
+
+/* ===== EVENT LOG ===== */
+.event-log { display: flex; flex-direction: column; gap: 5px; max-height: 180px; overflow-y: auto; }
+.event-entry {
+  font-size: 0.76rem; padding: 7px 10px; border-radius: 8px;
+  border-right: 3px solid; background: var(--bg2); line-height: 1.5;
+}
+.ev-good { border-color: var(--green2); }
+.ev-bad { border-color: var(--red2); }
+.ev-info { border-color: #30b0b0; }
+.ev-warn { border-color: var(--yellow2); }
+.ev-neutral { border-color: var(--border2); }
+
+/* ===== DARK WEB ===== */
+.dark-item {
+  background: var(--panel2);
+  border: 1px solid rgba(112,64,160,0.4);
+  border-radius: 12px; padding: 12px 14px;
+  margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
+}
+.dark-price { color: #a060e0; font-weight: 800; }
+.dark-discount { font-size: 0.7rem; color: var(--green2); }
+.dark-lock { font-size: 0.68rem; color: var(--yellow2); margin-top: 2px; }
+
+/* ===== CHART ===== */
+.chart-wrap { overflow-x: auto; }
+canvas { max-width: 100%; display: block; }
+
+/* ===== NEGOTIATION ===== */
+.neg-panel {
+  background: var(--panel2); border: 1px solid var(--border2);
+  border-radius: 12px; padding: 14px; margin-top: 10px;
+}
+.neg-step { font-size: 0.8rem; color: var(--text2); margin-bottom: 8px; }
+.neg-price { font-size: 1.2rem; font-weight: 900; color: var(--accent2); margin-bottom: 8px; }
+.neg-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ===== TUTORIAL HIGHLIGHT ===== */
+.highlight-tutorial {
+  animation: tutPulse 1s ease-in-out infinite;
+  position: relative; z-index: 50;
+}
+@keyframes tutPulse {
+  0% { box-shadow: 0 0 0 0 rgba(200,148,26,0.6); }
+  50% { box-shadow: 0 0 0 8px rgba(200,148,26,0.2); }
+  100% { box-shadow: 0 0 0 0 rgba(200,148,26,0); }
+}
+
+.tutorial-tooltip {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--panel); border: 2px solid var(--accent2);
+  border-radius: 14px; padding: 14px 20px;
+  font-size: 0.85rem; color: var(--text);
+  z-index: 200; max-width: 400px; text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ===== TOAST ===== */
+#toast {
+  position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--panel); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 10px 22px;
+  font-size: 0.83rem; z-index: 9999;
+  transition: transform 0.3s; max-width: 380px;
+  text-align: center; box-shadow: 0 8px 24px var(--shadow);
+  pointer-events: none;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+#toast.t-good { border-color: var(--green2); color: var(--green-light); }
+#toast.t-bad { border-color: var(--red2); color: #ff8070; }
+#toast.t-info { border-color: #30b0b0; color: #60d0d0; }
+
+/* ===== RESULT ===== */
+.result-icon { font-size: 3.5rem; margin-bottom: 12px; }
+.result-win { color: var(--accent2); font-size: 1.6rem; font-weight: 900; }
+.result-lose { color: var(--red2); font-size: 1.6rem; font-weight: 900; }
+.result-stats {
+  background: var(--bg2); border-radius: 10px; padding: 14px;
+  margin: 14px 0; font-size: 0.82rem; line-height: 2.2; text-align: right;
+  color: var(--text2);
+}
+.result-stats strong { color: var(--text); }
+
+/* ===== DAILY TIP ===== */
+.tip-modal {
+  background: var(--panel); border: 2px solid var(--accent2);
+  border-radius: 16px; padding: 24px; max-width: 380px;
+  text-align: center;
+}
+.tip-icon { font-size: 2.5rem; margin-bottom: 8px; }
+.tip-title { font-size: 1rem; font-weight: 800; color: var(--accent2); margin-bottom: 8px; }
+.tip-text { font-size: 0.82rem; color: var(--text2); line-height: 1.8; margin-bottom: 16px; }
+
+/* ===== TABS ===== */
+.tabs { display: flex; gap: 5px; margin-bottom: 14px; flex-wrap: wrap; }
+.tab {
+  background: var(--panel2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 14px;
+  font-size: 0.78rem; font-family: 'Vazirmatn', sans-serif;
+  color: var(--text2); cursor: pointer; transition: all 0.15s;
+}
+.tab:hover { border-color: var(--border2); color: var(--text); }
+.tab.active { border-color: var(--accent2); color: var(--accent2); background: var(--panel); }
+
+/* ===== NET BAR ===== */
+.net-bar-wrap { margin-top: 4px; }
+.net-bar { background: var(--bg); border-radius: 4px; height: 5px; overflow: hidden; }
+.net-bar-fill { height: 100%; background: linear-gradient(90deg, #30b0b0, #60d0d0); border-radius: 4px; transition: width 0.4s; }
+
+/* ===== INSPECTOR ALERT ===== */
+.inspector-banner {
+  background: rgba(192,48,32,0.1); border: 1px solid var(--red2);
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 12px;
+  font-size: 0.8rem; color: #ff8070; display: flex; gap: 8px; align-items: center;
+  animation: fadeIn 0.4s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ===== BOT PANEL ===== */
+.bot-card {
+  background: var(--panel2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 8px 10px; margin-bottom: 6px;
+  font-size: 0.75rem;
+}
+.bot-card.rank-1 { border-color: var(--accent2); }
+.bot-card.rank-2 { border-color: var(--border2); }
+.bot-card.rank-3 { border-color: var(--red2); }
+.bot-name { font-weight: 800; display: flex; align-items: center; gap: 5px; }
+.bot-profit { font-weight: 800; }
+.bot-profit.pos { color: var(--green2); }
+.bot-profit.neg { color: var(--red2); }
+
+/* ===== RANKING BANNER ===== */
+.rank-banner {
+  background: rgba(200,148,26,0.12); border: 1px solid var(--accent2);
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 12px;
+  font-size: 0.8rem; animation: fadeIn 0.4s ease;
+}
+
+/* ===== MENU TABS ===== */
+.menu-tabs { display: flex; gap: 0; margin-bottom: 20px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border2); }
+.menu-tab {
+  flex: 1; padding: 10px; text-align: center;
+  font-family: 'Vazirmatn', sans-serif; font-size: 0.85rem; font-weight: 700;
+  cursor: pointer; transition: all 0.2s; border: none;
+  background: var(--bg2); color: var(--text2);
+}
+.menu-tab.active { background: var(--panel2); color: var(--accent2); }
+.menu-tab:first-child { border-left: none; }
+
+  background: var(--panel); border-top: 1px solid var(--border);
+  text-align: center; font-size: 0.66rem; color: var(--text3);
+  padding: 8px;
+}
+
+/* ===== DEBT BADGE ===== */
+.debt-badge {
+  background: rgba(200,48,32,0.15); border: 1px solid var(--red2);
+  border-radius: 6px; padding: 3px 8px;
+  font-size: 0.7rem; color: #ff7060; font-weight: 700;
+}
+
+/* ===== HELP MODAL ===== */
+.help-section { margin-bottom: 14px; }
+.help-section h3 { color: var(--accent2); font-size: 0.9rem; margin-bottom: 6px; }
+.help-section p, .help-section li { font-size: 0.78rem; color: var(--text2); line-height: 1.8; }
+.help-section ul { padding-right: 16px; }
+
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.gap-6 { gap: 6px; }
+.gap-8 { gap: 8px; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.fw-800 { font-weight: 800; }
+.fs-sm { font-size: 0.75rem; }
+.c-text2 { color: var(--text2); }
+.c-text3 { color: var(--text3); }
+.c-green { color: var(--green2); }
+.c-red { color: var(--red2); }
+.c-yellow { color: var(--yellow2); }
+.c-gold { color: var(--accent2); }
+.c-purple { color: #a060e0; }
+.c-cyan { color: #30c0c0; }
+
+/* ===== NET PACKAGES ===== */
+.net-pkg {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 14px; cursor: pointer;
+  font-family: 'Vazirmatn', sans-serif; color: var(--text);
+  font-size: 0.82rem; display: flex; align-items: center; justify-content: space-between;
+  transition: all 0.15s; margin-bottom: 8px;
+}
+.net-pkg:hover { border-color: #30b0b0; }
+.net-pkg-name { font-weight: 700; }
+.net-pkg-price { color: var(--yellow2); font-weight: 800; }
+
+/* ===== AUTH FORMS ===== */
+.auth-input {
+  width: 100%; background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 11px 14px; color: var(--text);
+  font-family: 'Vazirmatn', sans-serif; font-size: 0.85rem;
+  margin-bottom: 10px; text-align: right;
+}
+.auth-input:focus { outline: none; border-color: var(--accent2); }
+.auth-input option { background: var(--panel); }
+.auth-error {
+  color: var(--red2); font-size: 0.78rem; margin-bottom: 10px;
+  text-align: center; background: rgba(200,48,32,0.1); border-radius: 6px; padding: 8px;
+}
+
+/* ===== PERFORMANCE MODE — حذف کامل انیمیشن‌ها ===== */
+[data-performance="on"] * {
+  animation: none !important;
+  transition: none !important;
+}
+[data-performance="on"] .next-day-btn:hover,
+[data-performance="on"] .btn:hover,
+[data-performance="on"] .mode-card:hover,
+[data-performance="on"] .nav-item:hover,
+[data-performance="on"] .color-swatch:hover {
+  transform: none !important;
+}
+/* حذف backdrop-filter — سنگین‌ترین افکت برای GPU ضعیف */
+[data-performance="on"] .overlay {
+  backdrop-filter: none !important;
+  background: rgba(0,0,0,0.92) !important;
+}
+/* حذف سایه‌های گرافیکی سنگین */
+[data-performance="on"] * {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+[data-performance="on"] .card,
+[data-performance="on"] .modal,
+[data-performance="on"] .bot-card {
+  box-shadow: none !important;
+}
+
+/* ===== THEME COLOR PALETTES ===== */
+/* پیش‌فرض: نارنجی — از :root بالا */
+
+[data-color="green"] {
+  --accent: #1a7a3a;
+  --accent2: #2ab050;
+  --green: #1a7a3a;
+  --green2: #2ab050;
+  --green-light: #60d080;
+  --glow: 0 0 12px rgba(42,176,80,0.25);
+}
+[data-color="green"][data-theme="light"] {
+  --accent: #0f5a28;
+  --accent2: #1a8038;
+  --green: #0f5a28;
+  --green2: #1a8038;
+  --green-light: #3ab060;
+}
+
+[data-color="blue"] {
+  --accent: #1a4a9a;
+  --accent2: #3070e0;
+  --green: #1a4a9a;
+  --green2: #3070e0;
+  --green-light: #60a0f0;
+  --glow: 0 0 12px rgba(48,112,224,0.25);
+}
+[data-color="blue"][data-theme="light"] {
+  --accent: #0f3070;
+  --accent2: #1a50c0;
+  --green: #0f3070;
+  --green2: #1a50c0;
+  --green-light: #4080e0;
+}
+
+/* ===== THEME MODAL ===== */
+.theme-modal {
+  background: var(--panel); border: 2px solid var(--border2);
+  border-radius: 16px; padding: 24px; max-width: 320px; width: 100%;
+}
+.theme-modal-title { font-size: 1rem; font-weight: 800; color: var(--accent2); margin-bottom: 16px; text-align: center; }
+.color-swatches { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
+.color-swatch {
+  width: 48px; height: 48px; border-radius: 50%; cursor: pointer;
+  border: 3px solid transparent; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+}
+.color-swatch:hover { transform: scale(1.1); }
+.color-swatch.active { border-color: var(--text); box-shadow: 0 0 0 3px rgba(255,255,255,0.2); }
+.color-swatch.orange { background: linear-gradient(135deg, #c8941a, #e8b040); }
+.color-swatch.green  { background: linear-gradient(135deg, #1a7a3a, #2ab050); }
+.color-swatch.blue   { background: linear-gradient(135deg, #1a4a9a, #3070e0); }
+.color-label { text-align: center; font-size: 0.78rem; color: var(--text2); margin-bottom: 14px; }
+
+.bot-detail-modal {
+  background: var(--panel); border: 2px solid var(--border2);
+  border-radius: 16px; padding: 24px; max-width: 360px; width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.bot-detail-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.bot-detail-emoji { font-size: 2rem; }
+.bot-detail-name { font-size: 1.2rem; font-weight: 900; color: var(--accent2); }
+.bot-detail-skill { font-size: 0.72rem; color: var(--text3); margin-top: 2px; }
+.bot-detail-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 0.82rem;
+}
+.bot-detail-row:last-child { border-bottom: none; }
+.bot-detail-label { color: var(--text3); }
+.bot-log {
+  background: var(--bg2); border-radius: 8px; padding: 10px; margin-top: 10px;
+  max-height: 130px; overflow-y: auto; font-size: 0.75rem;
+}
+.bot-log-item { padding: 4px 0; border-bottom: 1px solid var(--border); color: var(--text2); line-height: 1.5; }
+.bot-log-item:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+
+<!-- ===== START MODAL ===== -->
+<div class="overlay" id="startOverlay">
+  <div class="modal">
+    <div style="text-align:center; font-size:2.5rem; margin-bottom:8px;">🕸️🏪</div>
+    <div class="modal-title">بازارچه دارک وب</div>
+    <div class="modal-subtitle">نسخه ۱۲.۰</div>
+
+    <div class="menu-tabs" style="grid-template-columns:1fr 1fr 1fr;">
+      <button class="menu-tab active" onclick="switchMenuTab('offline')" id="menuTabOffline">🎮 آفلاین</button>
+      <button class="menu-tab" onclick="switchMenuTab('bot')" id="menuTabBot">🤖 با بات</button>
+      <button class="menu-tab" onclick="switchMenuTab('online')" id="menuTabOnline">🌐 آنلاین</button>
+    </div>
+
+    <!-- OFFLINE -->
+    <div id="menuOffline">
+      <div class="section-lbl" style="margin-bottom:10px;">انتخاب سختی</div>
+      <div class="mode-grid">
+        <div class="mode-card easy" onclick="selectMode('easy')"><div class="mode-emoji">😎</div><div class="mode-name">آسون</div><div class="mode-info">پول: ۲۰۰۰ت<br>هدف: ۷۰۰ت<br>۴۰ روز</div></div>
+        <div class="mode-card medium" onclick="selectMode('medium')"><div class="mode-emoji">🤔</div><div class="mode-name">متوسط</div><div class="mode-info">پول: ۱۰۰۰ت<br>هدف: ۱۰۰۰ت<br>۳۰ روز</div></div>
+        <div class="mode-card hard" onclick="selectMode('hard')"><div class="mode-emoji">😤</div><div class="mode-name">سخت</div><div class="mode-info">پول: ۷۵۰ت<br>هدف: ۲۰۰۰ت<br>۲۰ روز</div></div>
+        <div class="mode-card pro" onclick="selectMode('pro')"><div class="mode-emoji">💀</div><div class="mode-name">پرو</div><div class="mode-info">پول: ۵۰۰ت<br>هدف: ۲۵۰۰ت<br>۲۰ روز</div></div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="showHelp()">📖 راهنما</button>
+        <button class="btn btn-ghost btn-sm" onclick="openSettings()">⚙️</button>
+        <button class="btn btn-primary btn-full" onclick="startGame(null,false)">▶ شروع</button>
+      </div>
+      <div style="text-align:center; margin-top:10px; font-size:0.68rem; color:var(--text3);" id="savedGameInfo"></div>
+    </div>
+
+    <!-- BOT -->
+    <div id="menuBot" class="hidden">
+      <div class="section-lbl" style="margin-bottom:10px;">انتخاب سختی</div>
+      <div class="mode-grid">
+        <div class="mode-card easy" onclick="selectMode('easy')"><div class="mode-emoji">😎</div><div class="mode-name">آسون</div><div class="mode-info">رقبا: علی، آرسام<br>بدون کسر<br>۴۰ روز</div></div>
+        <div class="mode-card medium" onclick="selectMode('medium')"><div class="mode-emoji">🤔</div><div class="mode-name">متوسط</div><div class="mode-info">رقبا: آتیلا، آهیر<br>نفر آخر: −۱۰۰ت<br>۳۰ روز</div></div>
+        <div class="mode-card hard" onclick="selectMode('hard')"><div class="mode-emoji">😤</div><div class="mode-name">سخت</div><div class="mode-info">رقبا: پلیر، امیر<br>نفر آخر: −۱۰۰ت<br>۲۰ روز</div></div>
+        <div class="mode-card pro" onclick="selectMode('pro')"><div class="mode-emoji">💀</div><div class="mode-name">پرو</div><div class="mode-info">رقیب: یوزر63<br>نفر آخر: −۱۰۰ت<br>۲۰ روز</div></div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="startGame(null,true)">🤖 شروع با بات</button>
+    </div>
+
+    <!-- ONLINE -->
+    <div id="menuOnline" class="hidden">
+      <div id="onlineNotLoggedIn">
+        <div class="tabs" style="justify-content:center;">
+          <div class="tab active" onclick="showAuthForm('login')" id="authTabLogin">ورود</div>
+          <div class="tab" onclick="showAuthForm('signup')" id="authTabSignup">ثبت‌نام</div>
+        </div>
+
+        <!-- فرم ورود -->
+        <div id="authFormLogin">
+          <input type="text" id="loginUsername" placeholder="یوزرنیم" class="auth-input" maxlength="20">
+          <input type="password" id="loginPassword" placeholder="رمز عبور" class="auth-input">
+          <div id="loginError" class="auth-error hidden"></div>
+          <button class="btn btn-primary btn-full" onclick="doLogin()">🔓 ورود</button>
+          <div style="text-align:center; margin-top:10px;">
+            <a href="#" onclick="openForgotPassword(); return false;" style="font-size:0.75rem; color:var(--text3);">رمز عبور را فراموش کرده‌اید؟</a>
+          </div>
+        </div>
+
+        <!-- فرم ثبت‌نام -->
+        <div id="authFormSignup" class="hidden">
+          <input type="text" id="signupUsername" placeholder="یوزرنیم (۳-۲۰ کاراکتر، انگلیسی)" class="auth-input" maxlength="20">
+          <input type="password" id="signupPassword" placeholder="رمز عبور (حداقل ۸ کاراکتر)" class="auth-input">
+          <input type="password" id="signupPasswordConfirm" placeholder="تکرار رمز عبور" class="auth-input">
+          <select id="signupSecurityQuestion" class="auth-input">
+            <option value="">سوال امنیتی را انتخاب کنید</option>
+            <option value="نام اولین حیوان خانگی شما؟">نام اولین حیوان خانگی شما؟</option>
+            <option value="نام شهر محل تولد شما؟">نام شهر محل تولد شما؟</option>
+            <option value="نام مدرسه ابتدایی شما؟">نام مدرسه ابتدایی شما؟</option>
+            <option value="غذای مورد علاقه شما؟">غذای مورد علاقه شما؟</option>
+          </select>
+          <input type="text" id="signupSecurityAnswer" placeholder="پاسخ سوال امنیتی" class="auth-input">
+          <div id="signupError" class="auth-error hidden"></div>
+          <button class="btn btn-primary btn-full" onclick="doSignup()">✅ ثبت‌نام</button>
+        </div>
+      </div>
+      <div id="onlineLoggedIn" class="hidden">
+        <!-- پروفایل -->
+        <div style="display:flex; align-items:center; gap:10px; background:var(--bg2); border-radius:10px; padding:10px 14px; margin-bottom:14px;">
+          <div style="font-size:1.5rem;" id="onlineAvatar">👤</div>
+          <div>
+            <div style="font-weight:800; color:var(--accent2);" id="onlineUsername">کاربر</div>
+            <div style="font-size:0.72rem; color:var(--text3);" id="onlineEmail"></div>
+          </div>
+          <button class="btn btn-ghost btn-xs" style="margin-right:auto;" onclick="signOut()">خروج</button>
+        </div>
+
+        <!-- آنلاین‌ها -->
+        <div style="background:rgba(42,176,80,0.1); border:1px solid var(--green2); border-radius:8px; padding:8px 12px; margin-bottom:14px; font-size:0.78rem; display:flex; align-items:center; gap:8px;">
+          <span style="width:8px; height:8px; background:var(--green2); border-radius:50%; display:inline-block; animation:pulseGreen 2s infinite;"></span>
+          <span id="onlineCount" style="color:var(--green2); font-weight:700;">۰ نفر آنلاین</span>
+        </div>
+
+        <!-- منوها -->
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button class="btn btn-primary btn-full" onclick="showOnlineSection('friends')">👥 لیست دوستان</button>
+          <button class="btn btn-ghost btn-full" onclick="showOnlineSection('random')">🎲 بازی رندوم</button>
+          <button class="btn btn-ghost btn-full" onclick="openAccountSettings()">⚙️ تنظیمات اکانت</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SECURITY ALERT MODAL ===== -->
+<div class="overlay hidden" id="securityAlertOverlay">
+  <div class="modal" style="max-width:380px; border-color:var(--red2);">
+    <div style="text-align:center; font-size:2.5rem; margin-bottom:10px;">⚠️</div>
+    <div class="modal-title" style="color:var(--red2);">هشدار امنیتی!</div>
+    <div style="font-size:0.85rem; color:var(--text2); line-height:1.9; margin-bottom:16px; text-align:center;">
+      ورود به اکانت شما به دلیل تلاش‌های ناموفق مکرر از یک دستگاه دیگر، به‌مدت <strong id="alertLockLabel" style="color:var(--red2);">—</strong> قفل شده است.
+      <br><br>
+      اگر این تلاش‌ها توسط شما نبوده، لطفاً هرچه سریع‌تر رمز عبور خود را تغییر دهید.
+      <br><br>
+      🔒 تیم پشتیبانی آنگاس‌لند
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="document.getElementById('securityAlertOverlay').classList.add('hidden')">متوجه شدم</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="document.getElementById('securityAlertOverlay').classList.add('hidden'); openAccountSettings();">تغییر رمز</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FORGOT PASSWORD MODAL ===== -->
+<div class="overlay hidden" id="forgotPasswordOverlay">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-title" style="font-size:1.2rem;">🔑 بازیابی رمز عبور</div>
+
+    <div id="forgotStep1">
+      <input type="text" id="forgotUsername" placeholder="یوزرنیم خود را وارد کنید" class="auth-input">
+      <div id="forgotError1" class="auth-error hidden"></div>
+      <button class="btn btn-primary btn-full" onclick="forgotGetQuestion()">ادامه</button>
+    </div>
+
+    <div id="forgotStep2" class="hidden">
+      <div style="background:var(--bg2); border-radius:8px; padding:10px; margin-bottom:12px; font-size:0.82rem; color:var(--text2);" id="forgotQuestionText"></div>
+      <input type="text" id="forgotAnswer" placeholder="پاسخ شما" class="auth-input">
+      <input type="password" id="forgotNewPassword" placeholder="رمز عبور جدید (حداقل ۸ کاراکتر)" class="auth-input">
+      <div id="forgotError2" class="auth-error hidden"></div>
+      <button class="btn btn-primary btn-full" onclick="forgotResetPassword()">تغییر رمز عبور</button>
+    </div>
+
+    <button class="btn btn-ghost btn-full mt-8" onclick="closeForgotPassword()">انصراف</button>
+  </div>
+</div>
+
+<!-- ===== ACCOUNT SETTINGS MODAL ===== -->
+<div class="overlay hidden" id="accountSettingsOverlay">
+  <div class="modal" style="max-width:380px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div class="modal-title" style="margin-bottom:0; font-size:1.1rem;">⚙️ تنظیمات اکانت</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('accountSettingsOverlay').classList.add('hidden')">✕</button>
+    </div>
+    <div class="section-lbl" style="margin-bottom:8px;">یوزرنیم</div>
+    <div style="background:var(--bg2); border-radius:8px; padding:10px; margin-bottom:14px; font-size:0.85rem; color:var(--accent2); font-weight:700;" id="settingsUsername">—</div>
+  </div>
+</div>
+
+
+<!-- ===== FRIENDS MODAL ===== -->
+<div class="overlay hidden" id="friendsOverlay">
+  <div class="modal">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <div class="modal-title" style="margin-bottom:0;">👥 دوستان</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('friendsOverlay').classList.add('hidden')">✕</button>
+    </div>
+
+    <!-- اد فرند -->
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
+      <input type="text" id="addFriendInput" placeholder="یوزرنیم دوستت رو بزن..."
+        style="flex:1; background:var(--bg2); border:1px solid var(--border2); border-radius:8px; padding:8px 12px; color:var(--text); font-family:Vazirmatn,sans-serif; font-size:0.82rem;">
+      <button class="btn btn-success btn-sm" onclick="addFriend()">+ اد</button>
+    </div>
+
+    <!-- لیست دوستان -->
+    <div class="section-lbl" style="margin-bottom:8px;">دوستان من</div>
+    <div id="friendsList" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+      <div style="color:var(--text3); font-size:0.78rem; text-align:center; padding:20px;">در حال بارگذاری...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== RANDOM MATCHMAKING MODAL ===== -->
+<div class="overlay hidden" id="matchmakingOverlay">
+  <div class="modal" style="max-width:360px; text-align:center;">
+    <div style="font-size:2.5rem; margin-bottom:12px; animation:spin 2s linear infinite;">🔍</div>
+    <div class="modal-title">جستجوی حریف</div>
+    <div style="color:var(--text2); font-size:0.82rem; margin:12px 0;" id="matchmakingStatus">در حال پیدا کردن حریف...</div>
+    <div style="background:var(--bg2); border-radius:10px; padding:12px; margin-bottom:16px;">
+      <div style="font-size:0.78rem; color:var(--text2);" id="matchmakingCount">۱ از ۲ نفر</div>
+    </div>
+
+    <!-- دکمه شروع جستجوی رندوم (بدون انتخاب مود) -->
+    <div id="matchmakingRandomStart">
+      <button class="btn btn-primary btn-full" onclick="joinRandomMatch()">🎲 جستجوی حریف</button>
+    </div>
+
+    <div id="matchmakingWaiting" class="hidden">
+      <button class="btn btn-danger btn-sm" onclick="cancelMatchmaking()">✕ انصراف</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FRIEND DUEL MODE SELECT MODAL ===== -->
+<div class="overlay hidden" id="friendDuelOverlay">
+  <div class="modal" style="max-width:360px; text-align:center;">
+    <div style="font-size:2rem; margin-bottom:10px;">⚔️</div>
+    <div class="modal-title" style="font-size:1.1rem;">دوئل با <span id="duelFriendName" style="color:var(--accent2);">—</span></div>
+
+    <div class="section-lbl" style="margin-bottom:8px;">انتخاب گیم مود</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:14px;">
+      <div class="mode-card easy" onclick="selectOnlineMode('easy')" id="omode-easy"><div class="mode-name" style="font-size:0.85rem;">😎 آسون</div></div>
+      <div class="mode-card medium" onclick="selectOnlineMode('medium')" id="omode-medium"><div class="mode-name" style="font-size:0.85rem;">🤔 متوسط</div></div>
+      <div class="mode-card hard" onclick="selectOnlineMode('hard')" id="omode-hard"><div class="mode-name" style="font-size:0.85rem;">😤 سخت</div></div>
+      <div class="mode-card pro" onclick="selectOnlineMode('pro')" id="omode-pro"><div class="mode-name" style="font-size:0.85rem;">💀 پرو</div></div>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="sendDuelInvite()">📨 ارسال دعوت</button>
+    <button class="btn btn-ghost btn-full mt-8" onclick="document.getElementById('friendDuelOverlay').classList.add('hidden')">انصراف</button>
+  </div>
+</div>
+
+<!-- ===== WAITING FOR FRIEND MODAL ===== -->
+<div class="overlay hidden" id="friendWaitingOverlay">
+  <div class="modal" style="max-width:360px; text-align:center;">
+    <div style="font-size:2.5rem; margin-bottom:12px; animation:spin 2s linear infinite;">⏳</div>
+    <div class="modal-title" style="font-size:1.1rem;">در انتظار پاسخ</div>
+    <div style="color:var(--text2); font-size:0.82rem; margin:12px 0;" id="friendWaitingStatus">منتظر تأیید دوستت...</div>
+    <button class="btn btn-danger btn-sm" onclick="cancelMatchmaking()">✕ انصراف</button>
+  </div>
+</div>
+
+<style>
+@keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+@keyframes pulseGreen { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+</style>
+
+<!-- ===== HELP MODAL ===== -->
+<div class="overlay hidden" id="helpOverlay">
+  <div class="modal">
+    <div class="modal-title">📖 راهنمای بازی</div>
+    <div class="help-section">
+      <h3>🎯 هدف</h3>
+      <p>با خرید و فروش کالا در روزهای مشخص به سود تعیین‌شده برس!</p>
+    </div>
+    <div class="help-section">
+      <h3>🛒 خرید و فروش</h3>
+      <ul>
+        <li>قیمت‌ها هر روز تغییر می‌کنند</li>
+        <li>هر روز حداقل یک معامله الزامی است</li>
+        <li>حداکثر ۵ فرش در هر انبار</li>
+      </ul>
+    </div>
+    <div class="help-section">
+      <h3>🕸️ دارک وب</h3>
+      <ul>
+        <li>کالاها ۴۰-۷۰٪ ارزان‌تر</li>
+        <li>قفل فروش ۲-۳ روزه دارند</li>
+        <li>در انبار زیرزمین نگهداری می‌شوند</li>
+        <li>نیاز به اینترنت دارد</li>
+      </ul>
+    </div>
+    <div class="help-section">
+      <h3>👮 بازرس</h3>
+      <ul>
+        <li>هر روز احتمال بازرسی وجود دارد</li>
+        <li>اگر زیرزمین کالا داشته باشی: مصادره + جریمه!</li>
+      </ul>
+    </div>
+    <div class="help-section">
+      <h3>🤝 مذاکره</h3>
+      <ul>
+        <li>روزی یک بار می‌تونی با فروشنده چانه بزنی</li>
+        <li>تخفیف بیشتر = شانس قبول کمتر</li>
+      </ul>
+    </div>
+    <div class="help-section">
+      <h3>💰 بدهی</h3>
+      <ul>
+        <li>اگر پول کم بیاری، به بدهی اضافه می‌شه</li>
+        <li>بدهی بیش از ۲۰۰ت + پول صفر = بازی تموم!</li>
+      </ul>
+    </div>
+    <button class="btn btn-primary btn-full mt-12" onclick="document.getElementById('helpOverlay').classList.add('hidden')">متوجه شدم!</button>
+  </div>
+</div>
+
+<!-- ===== INCOMING INVITE MODAL ===== -->
+<div class="overlay hidden" id="incomingInviteOverlay">
+  <div class="modal" style="max-width:360px; text-align:center;">
+    <div style="font-size:2.5rem; margin-bottom:10px;">⚔️</div>
+    <div class="modal-title" style="font-size:1.1rem;">دعوت به دوئل!</div>
+    <div style="color:var(--text2); font-size:0.85rem; margin:12px 0 20px;" id="incomingInviteText"></div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="declineIncomingInvite()">رد کردن</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="acceptIncomingInvite()">✅ قبول</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SETTINGS MODAL ===== -->
+<div class="overlay hidden" id="settingsOverlay" onclick="closeSettings(event)">
+  <div class="theme-modal">
+    <div class="theme-modal-title">⚙️ تنظیمات</div>
+
+    <div style="font-size:0.72rem; color:var(--text3); margin-bottom:8px; text-align:center; font-weight:700; text-transform:uppercase; letter-spacing:1px;">رنگ رابط کاربری</div>
+    <div class="color-swatches">
+      <div style="text-align:center;">
+        <div class="color-swatch orange" id="swatchOrange" onclick="setColor('orange')" title="نارنجی">🍊</div>
+        <div style="font-size:0.65rem; color:var(--text3); margin-top:4px;">نارنجی</div>
+      </div>
+      <div style="text-align:center;">
+        <div class="color-swatch green" id="swatchGreen" onclick="setColor('green')" title="سبز">🌿</div>
+        <div style="font-size:0.65rem; color:var(--text3); margin-top:4px;">سبز</div>
+      </div>
+      <div style="text-align:center;">
+        <div class="color-swatch blue" id="swatchBlue" onclick="setColor('blue')" title="آبی">💎</div>
+        <div style="font-size:0.65rem; color:var(--text3); margin-top:4px;">آبی</div>
+      </div>
+    </div>
+
+    <hr style="border:none; border-top:1px solid var(--border); margin:14px 0;">
+
+    <div style="font-size:0.72rem; color:var(--text3); margin-bottom:8px; font-weight:700; text-transform:uppercase; letter-spacing:1px;">تم روشنایی</div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="setThemeMode('dark')" id="btnDarkMode">🌙 تاریک</button>
+      <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="setThemeMode('light')" id="btnLightMode">☀️ روشن</button>
+    </div>
+
+    <hr style="border:none; border-top:1px solid var(--border); margin:14px 0;">
+
+    <div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg2); border-radius:8px; padding:10px 14px;">
+      <div>
+        <div style="font-size:0.82rem; font-weight:700;">⚡ Performance Mode</div>
+        <div style="font-size:0.65rem; color:var(--text3); margin-top:2px;">خاموش کردن انیمیشن‌ها برای سیستم‌های ضعیف</div>
+      </div>
+      <input type="checkbox" id="performanceModeToggle" onchange="togglePerformanceMode()" style="width:18px; height:18px; cursor:pointer;">
+    </div>
+
+    <button class="btn btn-primary btn-full" style="margin-top:16px;" onclick="document.getElementById('settingsOverlay').classList.add('hidden')">✅ بستن</button>
+  </div>
+</div>
+
+<!-- ===== BOT DETAIL MODAL ===== -->
+<div class="overlay hidden" id="botDetailOverlay" onclick="closeBotDetail(event)">
+  <div class="bot-detail-modal" id="botDetailContent">
+    <div class="bot-detail-header">
+      <div class="bot-detail-emoji" id="bdEmoji">🤖</div>
+      <div>
+        <div class="bot-detail-name" id="bdName">بات</div>
+        <div class="bot-detail-skill" id="bdSkill">مهارت: متوسط</div>
+      </div>
+    </div>
+    <div class="bot-detail-row">
+      <span class="bot-detail-label">💰 پول نقد</span>
+      <span class="fw-800 c-green" id="bdMoney">—</span>
+    </div>
+    <div class="bot-detail-row">
+      <span class="bot-detail-label">📈 سود/زیان</span>
+      <span class="fw-800" id="bdProfit">—</span>
+    </div>
+    <div class="bot-detail-row">
+      <span class="bot-detail-label">📦 انبار معمولی</span>
+      <span id="bdNormal">—</span>
+    </div>
+    <div class="bot-detail-row">
+      <span class="bot-detail-label">🕳️ زیرزمین</span>
+      <span id="bdDark">—</span>
+    </div>
+    <div class="bot-detail-row">
+      <span class="bot-detail-label">📡 اینترنت</span>
+      <span class="c-cyan fw-800" id="bdNet">—</span>
+    </div>
+    <div class="bot-detail-row" id="bdDebtRow" style="display:none;">
+      <span class="bot-detail-label">💳 بدهی</span>
+      <span class="c-red fw-800" id="bdDebt">—</span>
+    </div>
+    <div style="font-size:0.72rem; color:var(--text3); margin-top:12px; margin-bottom:4px; font-weight:700; text-transform:uppercase; letter-spacing:1px;">📋 آخرین اقدامات</div>
+    <div class="bot-log" id="bdLog"></div>
+    <button class="btn btn-ghost btn-sm btn-full mt-12" onclick="document.getElementById('botDetailOverlay').classList.add('hidden')">بستن</button>
+  </div>
+</div>
+
+<!-- ===== GAME OVER ===== -->
+<div class="overlay hidden" id="gameOverOverlay">
+  <div class="modal text-center">
+    <div class="result-icon" id="resIcon">🏆</div>
+    <div id="resTitle" class="result-win">برنده شدی!</div>
+    <div id="resMsg" class="c-text2 fs-sm mt-8"></div>
+    <div class="result-stats" id="resStats"></div>
+    <button class="btn btn-primary btn-full" onclick="resetToMenu()">🔄 بازی مجدد</button>
+  </div>
+</div>
+
+<!-- ===== TRADE MODAL ===== -->
+<div class="overlay hidden" id="tradeOverlay">
+  <div class="modal" style="max-width:400px;">
+    <div style="font-size:1.4rem; text-align:center; margin-bottom:6px;" id="tradeIcon">🛒</div>
+    <div class="modal-title" style="font-size:1.3rem;" id="tradeTitle">خرید</div>
+    <div class="modal-subtitle" id="tradeDesc"></div>
+
+    <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:16px;">
+      <button class="btn btn-ghost btn-xs" onclick="chgQty(-10)">۱۰−</button>
+      <button class="btn btn-ghost btn-xs" onclick="chgQty(-1)">۱−</button>
+      <input type="number" id="tradeQty" class="qty-in" style="width:72px; font-size:1.1rem;" value="1" min="1" oninput="updTradeUI()">
+      <button class="btn btn-ghost btn-xs" onclick="chgQty(1)">۱+</button>
+      <button class="btn btn-ghost btn-xs" onclick="chgQty(10)">۱۰+</button>
+    </div>
+
+    <div style="background:var(--bg2); border-radius:10px; padding:12px; margin-bottom:14px; font-size:0.82rem; line-height:2.2;">
+      <div class="flex justify-between"><span class="c-text3">قیمت واحد</span><span class="fw-800" id="tradeUnit"></span></div>
+      <div class="flex justify-between"><span class="c-text3">جمع کل</span><span class="fw-800 c-yellow" id="tradeTotal"></span></div>
+      <div id="tradeExtra" class="c-text3 fs-sm"></div>
+    </div>
+
+    <!-- Negotiation Panel -->
+    <div id="negPanel" class="neg-panel hidden">
+      <div class="neg-step" id="negStep"></div>
+      <div class="neg-price" id="negPrice"></div>
+      <div class="neg-btns">
+        <button class="btn btn-ghost btn-sm" onclick="negRequest(5)">تخفیف ۵ت</button>
+        <button class="btn btn-ghost btn-sm" onclick="negRequest(10)">تخفیف ۱۰ت</button>
+        <button class="btn btn-ghost btn-sm" id="negLargBtn" onclick="negRequest(0)">تخفیف بیشتر</button>
+        <button class="btn btn-success btn-sm" id="negAcceptBtn" onclick="negAccept()" style="display:none;">✅ قبول!</button>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="cancelTrade()">انصراف</button>
+      <button class="btn" style="flex:2;" id="tradeConfirmBtn" onclick="confirmTrade()">✅ خرید</button>
+      <button class="btn btn-ghost btn-sm" id="negOpenBtn" onclick="openNeg()" title="مذاکره">🤝</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DAILY TIP ===== -->
+<div class="overlay hidden" id="tipOverlay">
+  <div class="tip-modal">
+    <div class="tip-icon">💡</div>
+    <div class="tip-title">نکته روز</div>
+    <div class="tip-text" id="tipText"></div>
+    <button class="btn btn-primary btn-sm" onclick="document.getElementById('tipOverlay').classList.add('hidden')">فهمیدم!</button>
+  </div>
+</div>
+
+<!-- ===== TUTORIAL TOOLTIP ===== -->
+<div class="tutorial-tooltip hidden" id="tutTooltip"></div>
+
+<!-- ===== TOAST ===== -->
+<div id="toast"></div>
+
+<!-- ===== GAME UI ===== -->
+<div id="gameUI">
+
+  <!-- HEADER -->
+  <div class="game-header">
+    <div class="logo">🕸️ بازارچه دارک</div>
+
+    <div class="stat-chip">
+      <span class="lbl">روز</span>
+      <span class="val val-yellow" id="hDay">۱</span>
+      <span class="c-text3">/</span>
+      <span class="val" id="hMaxDay">۴۰</span>
+    </div>
+
+    <div class="stat-chip">
+      <span class="lbl">پول</span>
+      <span class="val val-green" id="hMoney">۲۰۰۰</span>
+      <span class="c-text3" style="font-size:0.68rem;">ت</span>
+    </div>
+
+    <div class="stat-chip" id="debtChip" style="display:none;">
+      <span class="lbl">بدهی</span>
+      <span class="val val-red" id="hDebt">۰</span>
+      <span class="c-text3" style="font-size:0.68rem;">ت</span>
+    </div>
+
+    <div class="stat-chip">
+      <span class="lbl">اینترنت</span>
+      <span class="val val-cyan" id="hNet">۰</span>
+      <span class="c-text3" style="font-size:0.68rem;">MB</span>
+    </div>
+
+    <div class="stat-chip">
+      <span class="lbl">هدف</span>
+      <span class="val" style="color:var(--accent2);" id="hGoal">۷۰۰</span>
+      <span class="c-text3" style="font-size:0.68rem;">ت سود</span>
+    </div>
+
+    <div class="stat-chip" id="tradeWarning" style="border-color:var(--red2);">
+      <span id="tradeStatusIcon" style="color:var(--red2);">⚠️ هنوز معامله نکردی!</span>
+    </div>
+
+    <div class="header-right">
+      <button class="theme-toggle" onclick="toggleTheme()" title="تغییر تم" id="themeBtn">🌙</button>
+      <button class="theme-toggle" onclick="openSettings()" title="تنظیمات">⚙️</button>
+      <button class="btn btn-ghost btn-sm" onclick="saveGame()">💾 سیو</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--red2);" onclick="resetToMenu()">↩ منو</button>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="game-body">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+      <div class="section-lbl">ناوبری</div>
+      <button class="nav-item active" onclick="showTab('market')" id="nav-market">
+        <span class="nav-icon">🏪</span> بازار محلی
+      </button>
+      <button class="nav-item" onclick="showTab('browser')" id="nav-browser">
+        <span class="nav-icon">🌐</span> مرورگر
+        <span id="browserNetBadge" style="font-size:0.65rem; color:var(--red2); margin-right:auto;">📵</span>
+      </button>
+      <button class="nav-item" onclick="showTab('warehouse')" id="nav-warehouse">
+        <span class="nav-icon">📦</span> انبار
+      </button>
+      <button class="nav-item" onclick="showTab('internet')" id="nav-internet">
+        <span class="nav-icon">📡</span> خرید اینترنت
+      </button>
+
+      <hr class="section-sep">
+      <div class="section-lbl">پیشرفت</div>
+
+      <div class="progress-section">
+        <div class="prog-label">
+          <span>سود</span>
+          <span id="profitLbl">۰ت</span>
+        </div>
+        <div class="prog-bar">
+          <div class="prog-fill prog-money" id="profitBar" style="width:0%"></div>
+        </div>
+
+        <div class="prog-label" style="margin-top:6px;">
+          <span>زمان</span>
+          <span id="daysLbl">۴۰ روز</span>
+        </div>
+        <div class="prog-bar">
+          <div class="prog-fill prog-days" id="daysBar" style="width:100%"></div>
+        </div>
+      </div>
+
+      <hr class="section-sep">
+      <div class="section-lbl">انبار سریع</div>
+      <div id="quickCap" style="font-size:0.72rem; color:var(--text3);"></div>
+
+      <hr class="section-sep">
+
+      <button class="next-day-btn" id="nextDayBtn" onclick="nextDay()">⏭ روز بعد</button>
+    </div>
+
+    <!-- CENTER PANEL -->
+    <div class="center-panel" id="centerPanel">
+
+      <!-- MARKET TAB -->
+      <div id="tab-market">
+        <div id="inspectorBanner" class="inspector-banner hidden">
+          🚔 <strong>بازرس آمد!</strong> <span id="inspectorMsg"></span>
+        </div>
+        <div id="eventBanner" class="inspector-banner hidden" style="border-color:var(--yellow2); color:var(--yellow2);">
+          🎲 <span id="eventMsg"></span>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>🏪</span> بازار امروز — <span class="c-gold" id="dayLbl">روز ۱</span></div>
+          <table class="mkt-table">
+            <thead>
+              <tr>
+                <th>کالا</th><th>قیمت</th><th>تغییر</th><th>تعداد</th><th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="marketBody"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>📰</span> رویدادهای اخیر</div>
+          <div class="event-log" id="eventLog"></div>
+        </div>
+      </div>
+
+      <!-- BROWSER TAB -->
+      <div id="tab-browser" class="hidden">
+        <div class="tabs">
+          <div class="tab active" onclick="showBTab('web')" id="btab-web">🌐 وب معمولی <span class="fs-sm c-text3">(۱۰۰MB)</span></div>
+          <div class="tab" onclick="showBTab('dark')" id="btab-dark">🕸️ دارک وب <span class="fs-sm c-text3">(۱۰۰MB)</span></div>
+          <div class="tab" onclick="showBTab('chart')" id="btab-chart">📈 نمودار <span class="fs-sm c-text3">(۱۰۰MB)</span></div>
+          <div class="tab" onclick="showBTab('cal')" id="btab-cal">📅 تقویم <span class="fs-sm c-text3">(۵۰MB)</span></div>
+        </div>
+
+        <div id="bpanel-web">
+          <div class="card">
+            <div class="card-title"><span>🌐</span> اخبار بازار</div>
+            <div id="webNews" style="font-size:0.82rem; line-height:2.2; color:var(--text2);"></div>
+          </div>
+        </div>
+
+        <div id="bpanel-dark" class="hidden">
+          <div id="noNetMsg" class="card" style="text-align:center; color:var(--red2); display:none;">
+            ❌ اینترنت نداری! ابتدا بسته اینترنت بخر.
+          </div>
+          <div id="darkContent">
+            <div class="card">
+              <div class="card-title"><span>🕸️</span> دارک وب — کالاهای قاچاق</div>
+              <div style="font-size:0.72rem; color:var(--text3); margin-bottom:10px;">⚠️ قفل فروش ۲-۳ روزه • انبار زیرزمین • بازرس خطرناک!</div>
+              <div id="darkBody"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="bpanel-chart" class="hidden">
+          <div class="card">
+            <div class="card-title"><span>📈</span> نمودار قیمت — ۵ روز اخیر</div>
+            <div class="chart-wrap">
+              <canvas id="priceChart" width="580" height="280"></canvas>
+            </div>
+            <div id="chartAnalysis" style="margin-top:12px;"></div>
+          </div>
+        </div>
+
+        <div id="bpanel-cal" class="hidden">
+          <div class="card">
+            <div class="card-title"><span>📅</span> تقویم هفتگی <span style="font-size:0.65rem; color:var(--yellow2); font-weight:600; background:rgba(255,204,0,0.1); padding:2px 8px; border-radius:10px; margin-right:4px;">آزمایشی</span></div>
+            <div id="calendarBody"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WAREHOUSE TAB -->
+      <div id="tab-warehouse" class="hidden">
+        <div class="card">
+          <div class="card-title"><span>📦</span> انبار معمولی</div>
+          <div id="whNormal"></div>
+          <div class="cap-bar-wrap">
+            <div class="prog-label"><span>ظرفیت</span><span id="capNormalLbl"></span></div>
+            <div class="cap-bar"><div class="cap-fill cap-normal" id="capNormalBar" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="color:#a060e0;"><span>🕳️</span> انبار زیرزمین</div>
+          <div style="font-size:0.72rem; color:var(--text3); margin-bottom:8px;">⚠️ ریسک بازرسی روزانه!</div>
+          <div id="whDark"></div>
+          <div class="cap-bar-wrap">
+            <div class="prog-label"><span>ظرفیت</span><span id="capDarkLbl"></span></div>
+            <div class="cap-bar"><div class="cap-fill cap-dark" id="capDarkBar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INTERNET TAB -->
+      <div id="tab-internet" class="hidden">
+        <div class="card">
+          <div class="card-title"><span>📡</span> خرید بسته اینترنت</div>
+          <div style="font-size:0.82rem; color:var(--text2); margin-bottom:14px;">
+            موجودی: <span class="c-cyan fw-800" id="netDisplay">۰ MB</span>
+          </div>
+          <div id="netPackages"></div>
+          <div class="net-bar-wrap">
+            <div class="cap-bar"><div class="net-bar-fill" id="netBar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+      <hr class="section-sep">
+      <div class="section-lbl" id="rankingLabel" style="display:none;">🏆 رنکینگ امروز</div>
+      <div id="rankingPanel" style="display:none;"></div>
+
+      <hr class="section-sep" id="rankingSep" style="display:none;">
+      <div class="section-lbl">موجودی انبار</div>
+      <div id="sideInventory"></div>
+
+      <hr class="section-sep">
+      <div class="section-lbl">وضعیت مالی</div>
+      <div style="font-size:0.8rem; display:flex; flex-direction:column; gap:5px;">
+        <div class="flex justify-between"><span class="c-text3">پول نقد</span><span class="fw-800 c-green" id="sideMoney">۲۰۰۰ت</span></div>
+        <div class="flex justify-between"><span class="c-text3">سود/زیان</span><span class="fw-800" id="sideProfit">۰ت</span></div>
+        <div class="flex justify-between" id="sideDebtRow" style="display:none;"><span class="c-red">بدهی</span><span class="fw-800 c-red" id="sideDebt">۰ت</span></div>
+        <div class="flex justify-between"><span class="c-text3">هزینه انبار/روز</span><span class="fw-800 c-yellow" id="sideStorage">۰ت</span></div>
+        <div class="flex justify-between"><span class="c-text3">مذاکره</span><span class="fw-800" id="sideNeg">✅ آزاد</span></div>
+      </div>
+
+      <hr class="section-sep">
+      <div class="section-lbl">اطلاعات روز</div>
+      <div style="font-size:0.75rem; display:flex; flex-direction:column; gap:5px; color:var(--text2);">
+        <div>روز <span class="c-yellow fw-800" id="sideDay">۱</span> از <span id="sideMaxDay">۴۰</span></div>
+        <div>بازرس: <span class="c-red fw-800" id="sideInspect">۲۰٪</span></div>
+        <div>اینترنت: <span class="c-cyan fw-800" id="sideNet">۰ MB</span></div>
+        <div id="sideMode" style="margin-top:2px;"></div>
+      </div>
+    </div>
+
+  </div><!-- end game-body -->
+
+  <div class="game-footer">
+    Copyright © 2026 Angus Land. All rights reserved. | Version 12.0
+  </div>
+</div>
+
+<script>
+// =========================================================
+// DATA
+// =========================================================
+const ITEMS = [
+  { id:'apple',  name:'سیب',  icon:'🍎', base:25,  max:5,   isCarpet:false },
+  { id:'bread',  name:'نان',  icon:'🍞', base:15,  max:50,  isCarpet:false },
+  { id:'date',   name:'خرما', icon:'🌴', base:50,  max:30,  isCarpet:false },
+  { id:'carpet', name:'فرش',  icon:'🏺', base:180, max:5,   isCarpet:true  },
+];
+
+const MODES = {
+  easy:   { label:'آسون',  startMoney:2000, goal:700,  days:40, cap:50, storageCost:[1,2],   inspectChance:0.20, darkLock:2, fine:300, netPrices:null },
+  medium: { label:'متوسط', startMoney:1000, goal:1000, days:30, cap:30, storageCost:[2,4],   inspectChance:0.30, darkLock:2, fine:300, netPrices:null },
+  hard:   { label:'سخت',   startMoney:750,  goal:2000, days:20, cap:20, storageCost:[3,6],   inspectChance:0.40, darkLock:2, fine:300, netPrices:null },
+  pro:    { label:'پرو',   startMoney:500,  goal:2500, days:20, cap:10, storageCost:[10,20], inspectChance:0.50, darkLock:3, fine:400, netPrices:'volatile' },
+};
+
+const TIPS = [
+  'کالاهایی رو بخر که قیمتشون کاهش زیادی داشته — احتمال بازگشت بالاست!',
+  'هزینه انبارداری رو دست کم نگیر. با انبار خالی هیچ هزینه‌ای نداری!',
+  'دارک وب ارزون‌تره ولی بازرس می‌تونه همه چیز رو مصادره کنه.',
+  'سیستم مذاکره رو استفاده کن — روزی یه بار می‌تونی تخفیف بگیری.',
+  'نمودار قیمت کمک می‌کنه روند بازار رو بهتر ببینی.',
+  'بدهی بالا می‌تونه بازی رو تموم کنه. اول بدهی رو تسویه کن!',
+  'فرش گرونه ولی سود خوبی داره. حداکثر ۵ تا در هر انبار.',
+  'رویدادهای تصادفی می‌تونن همه چیز رو عوض کنن — آماده باش!',
+];
+
+// =========================================================
+// SUPABASE CONFIG
+// =========================================================
+const SUPABASE_URL = 'https://japskmsxnkxbdlsznsyt.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphcHNrbXN4bmt4YmRsc3puc3l0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2MzU4NTAsImV4cCI6MjA5NzIxMTg1MH0.GVCSVcZ_69YTcyaAdy5ke90nd53OsmKVXJsaLaNrH2I';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// محدودیت‌های سرور
+const MAX_FRIEND_MATCHES = 10;
+const MAX_RANDOM_MATCHES = 15;
+
+// =========================================================
+// ONLINE STATE
+// =========================================================
+let currentUser = null;
+let currentProfile = null;
+let currentMatchId = null;
+let matchSubscription = null;
+let onlineInterval = null;
+let selectedOnlineMode = 'easy';
+
+// =========================================================
+// AUTH
+// =========================================================
+// =========================================================
+// AUTH (Custom username/password via Edge Functions)
+// =========================================================
+const FUNCTIONS_URL = SUPABASE_URL + '/functions/v1';
+
+// شناسه یکتای کلاینت (مرورگر) — برای ردیابی قفل
+function getClientId() {
+  let cid = localStorage.getItem('bazaar_client_id');
+  if(!cid) {
+    cid = 'c_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem('bazaar_client_id', cid);
+  }
+  return cid;
+}
+
+async function callAuthFunction(name, body) {
+  try {
+    const res = await fetch(`${FUNCTIONS_URL}/${name}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    return { ok: res.ok, status: res.status, data };
+  } catch(e) {
+    return { ok: false, status: 0, data: { error: 'خطا در اتصال به سرور. اینترنتت رو چک کن.' } };
+  }
+}
+
+function showAuthForm(form) {
+  document.getElementById('authTabLogin').classList.toggle('active', form==='login');
+  document.getElementById('authTabSignup').classList.toggle('active', form==='signup');
+  document.getElementById('authFormLogin').classList.toggle('hidden', form!=='login');
+  document.getElementById('authFormSignup').classList.toggle('hidden', form!=='signup');
+}
+
+async function doSignup() {
+  const username = document.getElementById('signupUsername').value.trim();
+  const password = document.getElementById('signupPassword').value;
+  const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
+  const securityQuestion = document.getElementById('signupSecurityQuestion').value;
+  const securityAnswer = document.getElementById('signupSecurityAnswer').value.trim();
+  const errEl = document.getElementById('signupError');
+  errEl.classList.add('hidden');
+
+  if(!username || !password || !securityQuestion || !securityAnswer) {
+    errEl.textContent = 'همه فیلدها الزامی است'; errEl.classList.remove('hidden'); return;
+  }
+  if(password.length < 8) {
+    errEl.textContent = 'رمز عبور باید حداقل ۸ کاراکتر باشد'; errEl.classList.remove('hidden'); return;
+  }
+  if(password !== passwordConfirm) {
+    errEl.textContent = 'رمز عبور و تکرار آن یکسان نیستند'; errEl.classList.remove('hidden'); return;
+  }
+
+  const { ok, data } = await callAuthFunction('auth-signup', { username, password, securityQuestion, securityAnswer });
+
+  if(!ok) {
+    errEl.textContent = data.error || 'خطا در ثبت‌نام'; errEl.classList.remove('hidden'); return;
+  }
+
+  toast('✅ ثبت‌نام موفق! حالا وارد شو', 'good');
+  showAuthForm('login');
+  document.getElementById('loginUsername').value = username;
+}
+
+async function doLogin() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.classList.add('hidden');
+
+  if(!username || !password) {
+    errEl.textContent = 'یوزرنیم و رمز عبور را وارد کنید'; errEl.classList.remove('hidden'); return;
+  }
+
+  const { ok, status, data } = await callAuthFunction('auth-login', {
+    username, password, clientId: getClientId()
+  });
+
+  if(!ok) {
+    errEl.textContent = data.error || 'خطا در ورود'; errEl.classList.remove('hidden');
+    return;
+  }
+
+  onLoginSuccess(data.user);
+}
+
+function onLoginSuccess(user) {
+  currentUser = user;
+  currentProfile = { username: user.username };
+  localStorage.setItem('bazaar_session_user', JSON.stringify(user));
+  showOnlineProfile();
+  updateOnlineStatus(true);
+  startOnlineCountUpdater();
+  checkSecurityAlert();
+  toast(`✅ خوش اومدی ${user.username}!`, 'good');
+}
+
+async function checkSecurityAlert() {
+  const { data } = await callAuthFunction('auth-check-security', { userId: currentUser.id });
+  if(data && data.hasAlert) {
+    document.getElementById('alertLockLabel').textContent = data.lockLabel;
+    document.getElementById('securityAlertOverlay').classList.remove('hidden');
+  }
+}
+
+async function signOut() {
+  await updateOnlineStatus(false);
+  currentUser = null;
+  currentProfile = null;
+  localStorage.removeItem('bazaar_session_user');
+  document.getElementById('onlineLoggedIn').classList.add('hidden');
+  document.getElementById('onlineNotLoggedIn').classList.remove('hidden');
+  showAuthForm('login');
+  toast('👋 خروج انجام شد', 'info');
+}
+
+async function checkAuth() {
+  const saved = localStorage.getItem('bazaar_session_user');
+  if(saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      currentProfile = { username: currentUser.username };
+      showOnlineProfile();
+      updateOnlineStatus(true);
+      startOnlineCountUpdater();
+    } catch(e) {}
+  }
+}
+
+function showOnlineProfile() {
+  document.getElementById('onlineNotLoggedIn').classList.add('hidden');
+  document.getElementById('onlineLoggedIn').classList.remove('hidden');
+  document.getElementById('onlineUsername').textContent = currentProfile?.username || 'کاربر';
+  document.getElementById('onlineEmail').textContent = currentUser?.email || '';
+  document.getElementById('onlineAvatar').textContent = (currentProfile?.username || 'K')[0].toUpperCase();
+  updateOnlineCount();
+}
+
+// ===== فراموشی رمز =====
+let forgotUsernameCache = '';
+
+function openForgotPassword() {
+  document.getElementById('forgotPasswordOverlay').classList.remove('hidden');
+  document.getElementById('forgotStep1').classList.remove('hidden');
+  document.getElementById('forgotStep2').classList.add('hidden');
+  document.getElementById('forgotUsername').value = '';
+}
+
+function closeForgotPassword() {
+  document.getElementById('forgotPasswordOverlay').classList.add('hidden');
+}
+
+async function forgotGetQuestion() {
+  const username = document.getElementById('forgotUsername').value.trim();
+  const errEl = document.getElementById('forgotError1');
+  errEl.classList.add('hidden');
+
+  if(!username) { errEl.textContent = 'یوزرنیم را وارد کنید'; errEl.classList.remove('hidden'); return; }
+
+  const { ok, data } = await callAuthFunction('auth-reset-password', { step:'get-question', username });
+  if(!ok) { errEl.textContent = data.error || 'خطا'; errEl.classList.remove('hidden'); return; }
+
+  forgotUsernameCache = username;
+  document.getElementById('forgotQuestionText').textContent = data.question;
+  document.getElementById('forgotStep1').classList.add('hidden');
+  document.getElementById('forgotStep2').classList.remove('hidden');
+}
+
+async function forgotResetPassword() {
+  const securityAnswer = document.getElementById('forgotAnswer').value.trim();
+  const newPassword = document.getElementById('forgotNewPassword').value;
+  const errEl = document.getElementById('forgotError2');
+  errEl.classList.add('hidden');
+
+  if(!securityAnswer || !newPassword) {
+    errEl.textContent = 'همه فیلدها الزامی است'; errEl.classList.remove('hidden'); return;
+  }
+  if(newPassword.length < 8) {
+    errEl.textContent = 'رمز جدید باید حداقل ۸ کاراکتر باشد'; errEl.classList.remove('hidden'); return;
+  }
+
+  const { ok, data } = await callAuthFunction('auth-reset-password', {
+    step: 'verify-and-reset', username: forgotUsernameCache, securityAnswer, newPassword
+  });
+
+  if(!ok) { errEl.textContent = data.error || 'خطا'; errEl.classList.remove('hidden'); return; }
+
+  toast('✅ رمز عبور تغییر کرد! حالا وارد شو', 'good');
+  closeForgotPassword();
+  showAuthForm('login');
+  document.getElementById('loginUsername').value = forgotUsernameCache;
+}
+
+// ===== تنظیمات اکانت =====
+function openAccountSettings() {
+  document.getElementById('settingsUsername').textContent = currentProfile?.username || '—';
+  document.getElementById('accountSettingsOverlay').classList.remove('hidden');
+}
+
+// =========================================================
+// ONLINE STATUS
+// =========================================================
+async function updateOnlineStatus(isOnlineStatus) {
+  if(!currentUser) return;
+  if(isOnlineStatus) {
+    await sb.from('online_players').upsert({ user_id: currentUser.id, last_seen: new Date().toISOString() });
+  } else {
+    await sb.from('online_players').delete().eq('user_id', currentUser.id);
+  }
+}
+
+async function updateOnlineCount() {
+  const since = new Date(Date.now() - 5*60*1000).toISOString();
+  const { count } = await sb.from('online_players').select('*', { count:'exact', head:true }).gte('last_seen', since);
+  const el = document.getElementById('onlineCount');
+  if(el) el.textContent = P(count||0) + ' نفر آنلاین';
+}
+
+function startOnlineCountUpdater() {
+  updateOnlineCount();
+  clearInterval(onlineInterval);
+  onlineInterval = setInterval(() => {
+    updateOnlineStatus(true);
+    updateOnlineCount();
+    checkIncomingInvites();
+  }, 5000); // هر ۵ ثانیه چک کن (هم آنلاین استاتوس، هم دعوت‌های جدید)
+}
+
+// چک کردن دعوت‌های دوئل ورودی
+let shownInviteIds = new Set();
+async function checkIncomingInvites() {
+  if(!currentUser || currentMatchId) return;
+
+  // فقط دعوت‌های تازه (کمتر از ۵ دقیقه) رو در نظر بگیر — جلوگیری از match های قدیمی باقی‌مانده
+  const fiveMinAgo = new Date(Date.now() - 5*60*1000).toISOString();
+  const { data: invites } = await sb.from('matches').select('*')
+    .eq('player2_id', currentUser.id).eq('status', 'waiting').eq('type', 'friend')
+    .gte('created_at', fiveMinAgo)
+    .order('created_at', { ascending: false });
+
+  if(invites && invites.length > 0) {
+    const invite = invites[0];
+    if(shownInviteIds.has(invite.id)) return;
+    shownInviteIds.add(invite.id);
+    showIncomingInviteModal(invite);
+  }
+}
+
+function showIncomingInviteModal(invite) {
+  const inviterName = invite.game_state?.player1Username || 'یه دوست';
+  document.getElementById('incomingInviteText').textContent = `${inviterName} از تو دعوت به دوئل کرده! (مود: ${MODES[invite.mode]?.label})`;
+  document.getElementById('incomingInviteOverlay').classList.remove('hidden');
+  document.getElementById('incomingInviteOverlay').dataset.matchId = invite.id;
+}
+
+async function acceptIncomingInvite() {
+  const matchId = document.getElementById('incomingInviteOverlay').dataset.matchId;
+  document.getElementById('incomingInviteOverlay').classList.add('hidden');
+
+  const { data: match } = await sb.from('matches').select('*').eq('id', matchId).single();
+  if(!match || match.status !== 'waiting') {
+    toast('❌ این دعوت دیگه معتبر نیست', 'bad'); return;
+  }
+
+  const updatedState = { ...match.game_state, player2Username: currentProfile?.username || 'بازیکن ۲' };
+  await sb.from('matches').update({ status: 'active', game_state: updatedState }).eq('id', matchId);
+
+  currentMatchId = matchId;
+  startOnlineMatch(matchId, false);
+}
+
+function declineIncomingInvite() {
+  const matchId = document.getElementById('incomingInviteOverlay').dataset.matchId;
+  document.getElementById('incomingInviteOverlay').classList.add('hidden');
+  if(matchId) sb.from('matches').delete().eq('id', matchId);
+}
+
+// =========================================================
+// MENU TABS
+// =========================================================
+function switchMenuTab(tab) {
+  ['offline','bot','online'].forEach(t => {
+    document.getElementById('menuTab'+t.charAt(0).toUpperCase()+t.slice(1))?.classList.toggle('active', t===tab);
+    document.getElementById('menu'+t.charAt(0).toUpperCase()+t.slice(1))?.classList.toggle('hidden', t!==tab);
+  });
+  if(tab==='online') {
+    checkAuth();
+    updateOnlineCount();
+  }
+}
+
+// =========================================================
+// FRIENDS SYSTEM
+// =========================================================
+function showOnlineSection(section) {
+  if(section === 'friends') {
+    document.getElementById('friendsOverlay').classList.remove('hidden');
+    loadFriends();
+  } else if(section === 'random') {
+    document.getElementById('matchmakingOverlay').classList.remove('hidden');
+    document.getElementById('matchmakingRandomStart').classList.remove('hidden');
+    document.getElementById('matchmakingWaiting').classList.add('hidden');
+  }
+}
+
+async function addFriend() {
+  const input = document.getElementById('addFriendInput');
+  const username = input.value.trim();
+  if(!username) return;
+
+  const { data: findResult } = await callAuthFunction('auth-find-user', { username });
+  if(!findResult || !findResult.found) {
+    toast('❌ کاربری با این یوزرنیم پیدا نشد', 'bad'); return;
+  }
+  const friend = findResult.user;
+
+  const { ok, data } = await callAuthFunction('friends-action', {
+    action: 'add', userId: currentUser.id, friendId: friend.id
+  });
+
+  if(!ok) { toast('❌ ' + (data.error || 'خطا'), 'bad'); return; }
+
+  input.value = '';
+  toast('✅ درخواست دوستی فرستاده شد!', 'good');
+  loadFriends();
+}
+
+async function loadFriends() {
+  const el = document.getElementById('friendsList');
+  el.innerHTML = '<div style="color:var(--text3);font-size:0.78rem;text-align:center;padding:10px;">در حال بارگذاری...</div>';
+
+  const { ok, data } = await callAuthFunction('friends-list', { userId: currentUser.id });
+  if(!ok) { el.innerHTML = '<div style="color:var(--red2);font-size:0.78rem;text-align:center;padding:10px;">خطا در بارگذاری</div>'; return; }
+
+  let html = '';
+
+  const pending = (data.received||[]).filter(r => r.status === 'pending');
+  if(pending.length > 0) {
+    html += `<div class="section-lbl" style="margin-bottom:6px;">درخواست‌های جدید</div>`;
+    pending.forEach(r => {
+      html += `<div class="inv-row" style="flex-wrap:wrap; gap:6px;">
+        <div>${r.user_username}</div>
+        <div style="display:flex;gap:4px;margin-right:auto;">
+          <button class="btn btn-success btn-xs" onclick="acceptFriend('${r.id}')">✅ قبول</button>
+          <button class="btn btn-danger btn-xs" onclick="rejectFriend('${r.id}')">❌ رد</button>
+        </div>
+      </div>`;
+    });
+  }
+
+  const acceptedSent = (data.sent||[]).filter(s => s.status === 'accepted')
+    .map(s => ({ id: s.friend_id, username: s.friend_username }));
+  const acceptedReceived = (data.received||[]).filter(r => r.status === 'accepted')
+    .map(r => ({ id: r.user_id, username: r.user_username }));
+
+  // حذف تکراری‌ها بر اساس id — محافظ در برابر هر دیتای ناخواسته
+  const seenIds = new Set();
+  const allAccepted = [...acceptedSent, ...acceptedReceived].filter(f => {
+    if(seenIds.has(f.id)) return false;
+    seenIds.add(f.id);
+    return true;
+  });
+
+  if(allAccepted.length > 0) {
+    html += `<div class="section-lbl" style="margin:10px 0 6px;">دوستان من</div>`;
+    allAccepted.forEach(f => {
+      html += `<div class="inv-row">
+        <div>👤 ${f.username}</div>
+        <button class="btn btn-primary btn-xs" onclick="challengeFriend('${f.id}','${f.username}')">⚔️ دوئل</button>
+      </div>`;
+    });
+  }
+
+  if(!html) html = '<div style="color:var(--text3);font-size:0.78rem;text-align:center;padding:20px;">هنوز دوستی نداری!<br>یوزرنیم دوستت رو بالا بزن.</div>';
+  el.innerHTML = html;
+}
+
+async function acceptFriend(friendRowId) {
+  await callAuthFunction('friends-action', { action:'accept', friendRowId });
+  toast('✅ دوستی قبول شد!', 'good');
+  loadFriends();
+}
+
+async function rejectFriend(friendRowId) {
+  await callAuthFunction('friends-action', { action:'reject', friendRowId });
+  loadFriends();
+}
+
+// =========================================================
+// MATCHMAKING
+// =========================================================
+function selectOnlineMode(mode) {
+  selectedOnlineMode = mode;
+  ['easy','medium','hard','pro'].forEach(m => {
+    document.getElementById('omode-'+m)?.classList.toggle('selected', m===mode);
+  });
+}
+
+let randomPollInterval = null;
+
+async function joinRandomMatch() {
+  if(!currentUser) { toast('❌ ابتدا وارد شو', 'bad'); return; }
+
+  const { count } = await sb.from('matches').select('*', {count:'exact',head:true})
+    .eq('status','waiting').eq('type','random');
+  if((count||0) >= MAX_RANDOM_MATCHES) {
+    toast('⚠️ سرورها شلوغن! بعداً امتحان کن.', 'bad'); return;
+  }
+
+  document.getElementById('matchmakingRandomStart').classList.add('hidden');
+  document.getElementById('matchmakingWaiting').classList.remove('hidden');
+  document.getElementById('matchmakingStatus').textContent = 'در حال جستجو...';
+
+  const fixedMode = 'hard'; // رندوم روی مود سخت — بدون انتخاب
+
+  // دنبال یه مچ منتظر بگرد که خودم نباشم
+  const { data: waitingList } = await sb.from('matches').select('*')
+    .eq('status','waiting').eq('type','random').eq('mode', fixedMode)
+    .is('player2_id', null).neq('player1_id', currentUser.id)
+    .order('created_at', { ascending: true }).limit(1);
+
+  const waiting = waitingList && waitingList[0];
+
+  if(waiting) {
+    const updatedState = { ...waiting.game_state, player2Username: currentProfile?.username || 'بازیکن ۲' };
+    const { error: updateErr } = await sb.from('matches')
+      .update({ player2_id: currentUser.id, status:'active', game_state: updatedState })
+      .eq('id', waiting.id).eq('status', 'waiting'); // فقط اگه هنوز waiting باشه (جلوگیری از تصادم)
+
+    if(updateErr) {
+      toast('⚠️ یکی دیگه زودتر رسید! دوباره جستجو می‌کنم...', 'info');
+      setTimeout(joinRandomMatch, 800);
+      return;
+    }
+
+    currentMatchId = waiting.id;
+    document.getElementById('matchmakingStatus').textContent = '✅ حریف پیدا شد!';
+    document.getElementById('matchmakingCount').textContent = '۲ از ۲ نفر';
+    setTimeout(() => startOnlineMatch(waiting.id, false), 1200);
+  } else {
+    const initState = buildInitialGameState(fixedMode);
+    const { data: newMatch } = await sb.from('matches').insert({
+      player1_id: currentUser.id,
+      mode: fixedMode,
+      type: 'random',
+      status: 'waiting',
+      game_state: initState
+    }).select().single();
+
+    currentMatchId = newMatch.id;
+    document.getElementById('matchmakingStatus').textContent = 'منتظر حریف...';
+    document.getElementById('matchmakingCount').textContent = '۱ از ۲ نفر';
+
+    // پولینگ هر ۲ ثانیه برای چک وضعیت مچ (به‌جای realtime که نیاز به تنظیم جداگانه داره)
+    randomPollInterval = setInterval(async () => {
+      const { data: m } = await sb.from('matches').select('*').eq('id', newMatch.id).maybeSingle();
+      if(m && m.status === 'active') {
+        clearInterval(randomPollInterval);
+        randomPollInterval = null;
+        startOnlineMatch(newMatch.id, true);
+      }
+      if(!m) {
+        // مچ حذف شده (مثلاً کنسل شده)
+        clearInterval(randomPollInterval);
+        randomPollInterval = null;
+      }
+    }, 2000);
+  }
+}
+
+let pendingChallengeFriendId = null;
+let pendingChallengeFriendName = null;
+
+function challengeFriend(friendId, friendUsername) {
+  pendingChallengeFriendId = friendId;
+  pendingChallengeFriendName = friendUsername;
+  document.getElementById('friendsOverlay').classList.add('hidden');
+  document.getElementById('duelFriendName').textContent = friendUsername;
+  selectOnlineMode('easy');
+  document.getElementById('friendDuelOverlay').classList.remove('hidden');
+}
+
+async function sendDuelInvite() {
+  if(!currentUser || !pendingChallengeFriendId) return;
+
+  const { count } = await sb.from('matches').select('*', {count:'exact',head:true})
+    .eq('status','waiting').eq('type','friend');
+  if((count||0) >= MAX_FRIEND_MATCHES) {
+    toast('⚠️ ظرفیت مچ دوستانه پر!', 'bad'); return;
+  }
+
+  document.getElementById('friendDuelOverlay').classList.add('hidden');
+  document.getElementById('friendWaitingOverlay').classList.remove('hidden');
+  document.getElementById('friendWaitingStatus').textContent = `منتظر تأیید ${pendingChallengeFriendName}...`;
+
+  const initState = buildInitialGameState(selectedOnlineMode);
+  const { data: newMatch } = await sb.from('matches').insert({
+    player1_id: currentUser.id,
+    player2_id: pendingChallengeFriendId,
+    mode: selectedOnlineMode,
+    type: 'friend',
+    status: 'waiting',
+    game_state: initState
+  }).select().single();
+
+  currentMatchId = newMatch.id;
+  toast(`✅ دعوت به ${pendingChallengeFriendName} فرستاده شد!`, 'good');
+
+  // پولینگ هر ۲ ثانیه تا دوست قبول کنه
+  randomPollInterval = setInterval(async () => {
+    const { data: m } = await sb.from('matches').select('*').eq('id', newMatch.id).maybeSingle();
+    if(m && m.status === 'active') {
+      clearInterval(randomPollInterval);
+      randomPollInterval = null;
+      document.getElementById('friendWaitingOverlay').classList.add('hidden');
+      startOnlineMatch(newMatch.id, true);
+    }
+    if(!m) {
+      clearInterval(randomPollInterval);
+      randomPollInterval = null;
+      document.getElementById('friendWaitingOverlay').classList.add('hidden');
+      toast('❌ دعوت رد شد یا منقضی شد', 'bad');
+    }
+  }, 2000);
+}
+
+async function cancelMatchmaking() {
+  clearMatchSubscription();
+  if(randomPollInterval) { clearInterval(randomPollInterval); randomPollInterval = null; }
+  if(currentMatchId) {
+    await sb.from('matches').delete().eq('id', currentMatchId);
+    currentMatchId = null;
+  }
+  document.getElementById('matchmakingOverlay').classList.add('hidden');
+  document.getElementById('friendWaitingOverlay').classList.add('hidden');
+}
+
+function clearMatchSubscription() {
+  if(matchSubscription) { sb.removeChannel(matchSubscription); matchSubscription = null; }
+}
+
+
+function buildInitialGameState(mode) {
+  const modeData = MODES[mode];
+  const prices = genPrices(null);
+  const ph = genInitialHistory();
+  ITEMS.forEach(i => ph[i.id].push(prices[i.id]));
+  return {
+    mode, day: 1,
+    prices, darkPrices: genDarkPrices(prices),
+    priceHistory: ph,
+    netPrices: genNetPrices(mode),
+    events: ['بازی آنلاین شروع شد! 🌐'],
+    player1Username: currentProfile?.username || 'بازیکن ۱',
+    player2Username: null,
+    player1: { money: modeData.startMoney, startMoney: modeData.startMoney, debt:0, internet:0,
+      warehouse: ITEMS.map(i=>({id:i.id,qty:0,avgBuy:0,lockedQty:0})),
+      darkWarehouse: ITEMS.map(i=>({id:i.id,qty:0,avgBuy:0,lockDays:0})),
+      tradedToday:false, realTradedToday:false, negUsedToday:false,
+      negBlockedItems:{}, festivalActive:false, festivalUsed:false },
+    player2: { money: modeData.startMoney, startMoney: modeData.startMoney, debt:0, internet:0,
+      warehouse: ITEMS.map(i=>({id:i.id,qty:0,avgBuy:0,lockedQty:0})),
+      darkWarehouse: ITEMS.map(i=>({id:i.id,qty:0,avgBuy:0,lockDays:0})),
+      tradedToday:false, realTradedToday:false, negUsedToday:false,
+      negBlockedItems:{}, festivalActive:false, festivalUsed:false },
+  };
+}
+
+async function startOnlineMatch(matchId, isPlayer1) {
+  document.getElementById('matchmakingOverlay').classList.add('hidden');
+  document.getElementById('startOverlay').classList.add('hidden');
+
+  const { data: match } = await sb.from('matches').select('*').eq('id', matchId).single();
+  if(!match) { toast('❌ خطا در بارگذاری مچ', 'bad'); return; }
+
+  // لود وضعیت پلیر از match
+  const gs = match.game_state;
+  const playerKey = isPlayer1 ? 'player1' : 'player2';
+  const opponentKey = isPlayer1 ? 'player2' : 'player1';
+
+  G = {
+    ...gs[playerKey],
+    mode: gs.mode,
+    day: gs.day,
+    prices: gs.prices,
+    darkPrices: gs.darkPrices,
+    priceHistory: gs.priceHistory,
+    netPrices: gs.netPrices,
+    events: gs.events || [],
+    demandTracker: gs.demandTracker || {},
+    browserTabsVisited: {},
+    boughtToday: {},
+    _onlineMatchId: matchId,
+    _isPlayer1: isPlayer1,
+    _playerKey: playerKey,
+    _opponentKey: opponentKey,
+  };
+
+  isOnline = false; // بات نداریم در آنلاین واقعی
+  bots = [];
+
+  document.getElementById('gameUI').classList.add('active');
+  document.querySelector('button[onclick="saveGame()"]').style.display = 'none';
+
+  // نمایش اطلاعات حریف در سایدبار
+  const opponentUsername = isPlayer1 ? (gs.player2Username || 'حریف') : (gs.player1Username || 'حریف');
+  G._opponentUsername = opponentUsername;
+  showOnlineOpponentPanel(gs[opponentKey], opponentUsername);
+
+  renderAll();
+  showTab('market');
+
+  // گوش دادن به آپدیت‌های مچ (حریف)
+  listenToMatch(matchId, playerKey, opponentKey);
+
+  toast('🌐 بازی آنلاین شروع شد!', 'good', 3000);
+}
+
+function showOnlineOpponentPanel(opponentState, opponentUsername) {
+  let el = document.getElementById('rankingPanel');
+  let label = document.getElementById('rankingLabel');
+  let sep = document.getElementById('rankingSep');
+  if(el) {
+    el.style.display = 'block';
+    label.style.display = 'block';
+    label.textContent = '⚔️ حریف: ' + (opponentUsername || 'در حال اتصال...');
+    sep.style.display = 'block';
+    updateOnlineOpponentPanel(opponentState, opponentUsername);
+  }
+}
+
+function updateOnlineOpponentPanel(opState, opponentUsername) {
+  let el = document.getElementById('rankingPanel');
+  if(!el || !opState) return;
+  let name = opponentUsername || G._opponentUsername || 'حریف';
+  let invVal = 0;
+  (opState.warehouse||[]).forEach(w => invVal += w.qty * (G.prices[w.id]||0));
+  let profit = (opState.money + invVal) - opState.startMoney - (opState.debt||0);
+  let myProfit = calcProfit();
+  let ahead = myProfit >= profit;
+
+  el.innerHTML = `
+    <div class="bot-card" style="border-color:${ahead?'var(--green2)':'var(--red2)'};">
+      <div class="bot-name">👤 <span>${name}</span></div>
+      <div class="bot-profit ${profit>=0?'pos':'neg'}">${P(profit)}ت سود</div>
+      <div style="font-size:0.7rem; color:${ahead?'var(--green2)':'var(--red2)'}; margin-top:2px;">
+        ${ahead ? '✅ شما جلویید!' : '⚠️ حریف جلوتره!'}
+      </div>
+    </div>
+    <div style="font-size:0.7rem; color:var(--text3); text-align:center;">شما: ${P(myProfit)}ت</div>
+  `;
+}
+
+let liveMatchPollInterval = null;
+
+function listenToMatch(matchId, playerKey, opponentKey) {
+  if(liveMatchPollInterval) clearInterval(liveMatchPollInterval);
+
+  liveMatchPollInterval = setInterval(async () => {
+    const { data: match } = await sb.from('matches').select('*').eq('id', matchId).maybeSingle();
+    if(!match) { clearInterval(liveMatchPollInterval); return; }
+
+    const gs = match.game_state;
+
+    // اگه حریف روز رو جلوتر برده، و خودمون هنوز توی روز قبلی هستیم:
+    // یعنی منتظر بودیم (یا اصلاً دکمه رو نزده بودیم) و سرور با تایمر یا توافق روز رو برد
+    if(gs.day > G.day) {
+      applyOnlineDayAdvance(gs);
+    }
+
+    // آپدیت یوزرنیم حریف اگه تازه join شده
+    const oppUsername = playerKey === 'player1' ? gs.player2Username : gs.player1Username;
+    if(oppUsername) G._opponentUsername = oppUsername;
+
+    // نشون دادن وضعیت "حریف آماده‌ست، منتظر شماست" اگه پلیر دکمه رو نزده ولی حریف زده
+    const oppReadyForToday = gs.readyState?.[opponentKey]?.day === gs.day;
+    const myReadyForToday = gs.readyState?.[playerKey]?.day === gs.day;
+    if(oppReadyForToday && !myReadyForToday && !onlineWaitInterval) {
+      const btn = document.getElementById('nextDayBtn');
+      if(btn && !btn.disabled) {
+        btn.classList.add('warning');
+        btn.title = 'حریف منتظر شماست! روز بعد رو بزن';
+      }
+    }
+
+    updateOnlineOpponentPanel(gs[opponentKey], G._opponentUsername);
+    renderAll();
+
+    if(match.status === 'finished') {
+      clearInterval(liveMatchPollInterval);
+      handleOnlineGameEnd(gs, playerKey);
+    }
+  }, 3000); // هر ۳ ثانیه
+}
+
+async function syncOnlineState() {
+  if(!G._onlineMatchId) return;
+  const { data: match } = await sb.from('matches').select('game_state').eq('id', G._onlineMatchId).single();
+  if(!match) return;
+
+  let gs = match.game_state;
+  // فقط وضعیت خودمون رو می‌نویسیم — قیمت‌ها و روز مشترک رو دست نمی‌زنیم
+  // (اون‌ها فقط توسط Edge Function match-next-day به‌صورت atomic آپدیت می‌شن)
+  gs[G._playerKey] = {
+    money: G.money, startMoney: G.startMoney, debt: G.debt, internet: G.internet,
+    warehouse: G.warehouse, darkWarehouse: G.darkWarehouse,
+    tradedToday: G.tradedToday, realTradedToday: G.realTradedToday,
+    negUsedToday: G.negUsedToday, negBlockedItems: G.negBlockedItems||{},
+    festivalActive: G.festivalActive||false, festivalUsed: G.festivalUsed||false,
+    _dayPurchases: G.demandTracker || {},
+  };
+
+  await sb.from('matches').update({ game_state: gs }).eq('id', G._onlineMatchId);
+
+  // اگه قیمت‌های سرور با قیمت‌های local ما فرق داره (یعنی حریف از قبل روز رو پیش برده)، sync کن
+  if(gs.day > G.day) {
+    G.day = gs.day;
+    G.prices = gs.prices;
+    G.darkPrices = gs.darkPrices;
+    G.priceHistory = gs.priceHistory;
+    renderAll();
+  }
+}
+
+function handleOnlineGameEnd(gs, playerKey) {
+  const myState = gs[playerKey];
+  let myProfit = (myState.money + 0) - myState.startMoney - (myState.debt||0);
+  let opKey = playerKey === 'player1' ? 'player2' : 'player1';
+  let opState = gs[opKey];
+  let opProfit = (opState.money + 0) - opState.startMoney - (opState.debt||0);
+  endGame(myProfit > opProfit, myProfit <= opProfit ? 'حریف جلوتر بود!' : '');
+}
+
+
+const BOT_CONFIGS = {
+  easy:   [{ name:'علی',    emoji:'👨', skill:'easy'   }, { name:'آرسام',  emoji:'🧑', skill:'easy'   }],
+  medium: [{ name:'آتیلا',  emoji:'🧔', skill:'medium' }, { name:'آهیر',   emoji:'👱', skill:'medium' }],
+  hard:   [{ name:'پلیر',   emoji:'🤖', skill:'hard'   }, { name:'امیر',   emoji:'😎', skill:'hard'   }],
+  pro:    [{ name:'یوزر63', emoji:'💀', skill:'pro'    }],
+};
+
+// =========================================================
+// STATE
+// =========================================================
+let G = {};
+let selectedMode = 'easy';
+let tradeState = {};
+let negState = {};
+let tutStep = 0;
+let tutActive = false;
+let currentTab = 'market';
+let currentBTab = 'web';
+let isDark = true;
+let isOnline = false; // حالت رقابتی
+let bots = [];        // آرایه بات‌ها
+
+// =========================================================
+// UTILS
+// =========================================================
+const P = n => {
+  const d = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+  return String(Math.round(n)).replace(/[0-9]/g, x => d[+x]);
+};
+const rnd = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+const itemOf = id => ITEMS.find(i=>i.id===id);
+const nameOf = id => itemOf(id)?.name||id;
+const iconOf = id => itemOf(id)?.icon||'📦';
+
+function toast(msg, type='info', dur=2600) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show t-${type}`;
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.className='', dur);
+}
+
+// =========================================================
+// THEME
+// =========================================================
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? '' : 'light');
+  document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
+  localStorage.setItem('bazaar_theme', isDark ? 'dark' : 'light');
+  updateThemeButtons();
+}
+
+function setThemeMode(mode) {
+  isDark = mode === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? '' : 'light');
+  document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
+  localStorage.setItem('bazaar_theme', isDark ? 'dark' : 'light');
+  updateThemeButtons();
+}
+
+function setColor(color) {
+  document.documentElement.setAttribute('data-color', color === 'orange' ? '' : color);
+  localStorage.setItem('bazaar_color', color);
+  updateSwatches(color);
+}
+
+function updateSwatches(color) {
+  ['orange','green','blue'].forEach(c => {
+    document.getElementById('swatch'+c.charAt(0).toUpperCase()+c.slice(1))
+      ?.classList.toggle('active', c === color);
+  });
+}
+
+function updateThemeButtons() {
+  document.getElementById('btnDarkMode')?.classList.toggle('btn-primary', isDark);
+  document.getElementById('btnDarkMode')?.classList.toggle('btn-ghost', !isDark);
+  document.getElementById('btnLightMode')?.classList.toggle('btn-primary', !isDark);
+  document.getElementById('btnLightMode')?.classList.toggle('btn-ghost', isDark);
+}
+
+function openSettings() {
+  updateThemeButtons();
+  let savedColor = localStorage.getItem('bazaar_color') || 'orange';
+  updateSwatches(savedColor);
+  document.getElementById('performanceModeToggle').checked = localStorage.getItem('bazaar_performance') === 'on';
+  document.getElementById('settingsOverlay').classList.remove('hidden');
+}
+
+function closeSettings(e) {
+  if(e.target.id === 'settingsOverlay') {
+    document.getElementById('settingsOverlay').classList.add('hidden');
+  }
+}
+
+function togglePerformanceMode() {
+  const on = document.getElementById('performanceModeToggle').checked;
+  document.documentElement.setAttribute('data-performance', on ? 'on' : 'off');
+  localStorage.setItem('bazaar_performance', on ? 'on' : 'off');
+  toast(on ? '⚡ حالت پرفورمنس فعال شد — انیمیشن‌ها خاموش شدن' : '🎨 انیمیشن‌ها روشن شدن', 'info');
+}
+
+function initTheme() {
+  const savedTheme = localStorage.getItem('bazaar_theme');
+  const savedColor = localStorage.getItem('bazaar_color') || 'orange';
+  const savedPerformance = localStorage.getItem('bazaar_performance') || 'off';
+  isDark = savedTheme !== 'light';
+  document.documentElement.setAttribute('data-theme', isDark ? '' : 'light');
+  document.documentElement.setAttribute('data-color', savedColor === 'orange' ? '' : savedColor);
+  document.documentElement.setAttribute('data-performance', savedPerformance);
+  document.getElementById('themeBtn').textContent = isDark ? '🌙' : '☀️';
+}
+
+// switchMenuTab در بخش آنلاین تعریف شده
+function selectMode(m) {
+  selectedMode = m;
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector(`.mode-card.${m}`).classList.add('selected');
+}
+
+// =========================================================
+// PRICE GENERATION
+// =========================================================
+function genPrices(prev, demandMap) {
+  let p = {};
+  ITEMS.forEach(item => {
+    if(!prev) {
+      p[item.id] = item.base;
+    } else {
+      let factor = 0.65 + Math.random() * 0.90;
+      let raw = Math.round(prev[item.id] * factor);
+
+      // قیمت‌دهی پویا بر اساس تقاضای روز قبل
+      if(demandMap && Object.keys(demandMap).length > 0) {
+        let totalDemand = Object.values(demandMap).reduce((s,v)=>s+v, 0) || 1;
+        let itemDemand = demandMap[item.id] || 0;
+        let demandShare = itemDemand / totalDemand;
+        let avgShare = 1 / ITEMS.length;
+        // هر چه بیشتر خریداری شده → فردا ارزون‌تر (عرضه زیاد)
+        // هر چه کمتر خریداری شده → فردا گرون‌تر (تقاضای انباشته)
+        let demandEffect = (avgShare - demandShare) * 1.2;
+        demandEffect = Math.max(-0.20, Math.min(0.20, demandEffect));
+        raw = Math.round(raw * (1 + demandEffect));
+      }
+
+      p[item.id] = Math.max(18, Math.min(350, raw));
+    }
+  });
+  return p;
+}
+
+// تولید تاریخچه شبیه‌سازی‌شده برای ۵ روز قبل از شروع
+function genInitialHistory() {
+  let ph = {};
+  // روز -4 تا -1 بر اساس پایه
+  let sim = {};
+  ITEMS.forEach(i => sim[i.id] = i.base);
+  let history = [sim];
+  for(let d=0; d<4; d++) {
+    let next = {};
+    ITEMS.forEach(item => {
+      let factor = 0.75 + Math.random() * 0.60;
+      next[item.id] = Math.max(18, Math.min(350, Math.round(history[history.length-1][item.id] * factor)));
+    });
+    history.push(next);
+  }
+  ITEMS.forEach(item => {
+    ph[item.id] = history.map(h => h[item.id]);
+  });
+  return ph;
+}
+
+function genDarkPrices(normal) {
+  let p = {};
+  ITEMS.forEach(item => {
+    let disc = 0.30 + Math.random() * 0.40; // 30-70% off
+    p[item.id] = Math.max(8, Math.round(normal[item.id] * (1 - disc)));
+  });
+  return p;
+}
+
+function genNetPrices(mode) {
+  if(mode !== 'pro') return { p1:20, p2:35, p10:120 };
+  return {
+    p1: rnd(50,100),
+    p2: rnd(90,150),
+    p10: rnd(300,500),
+  };
+}
+
+// =========================================================
+// START GAME
+// =========================================================
+function startGame(saved, online) {
+  if(online !== undefined) isOnline = online;
+
+  if(saved) {
+    G = saved;
+    // بازیابی بات‌ها از سیو (فقط آفلاین)
+    bots = saved._bots || [];
+  } else {
+    let mode = MODES[selectedMode];
+    // قیمت روز اول = پایه تعریف‌شده
+    let prices = genPrices(null);
+    // تاریخچه ۵ روز شبیه‌سازی‌شده + روز جاری
+    let ph = genInitialHistory();
+    ITEMS.forEach(i => ph[i.id].push(prices[i.id]));
+
+    G = {
+      mode: selectedMode,
+      day: 1,
+      money: mode.startMoney,
+      startMoney: mode.startMoney,
+      debt: 0,
+      internet: 0,
+      prices: prices,
+      darkPrices: genDarkPrices(prices),
+      netPrices: genNetPrices(selectedMode),
+      warehouse: ITEMS.map(i=>({ id:i.id, qty:0, avgBuy:0, lockedQty:0 })),
+      darkWarehouse: ITEMS.map(i=>({ id:i.id, qty:0, avgBuy:0, lockDays:0 })),
+      priceHistory: ph,
+      events: ['بازی شروع شد. موفق باشی! 🍀'],
+      tradedToday: false,
+      realTradedToday: false,
+      negUsedToday: false,
+      festivalActive: false,
+      festivalUsed: false,
+      currentEvent: null,
+      demandTracker: {}, // ردیابی تقاضای روزانه برای قیمت‌دهی پویا
+    };
+
+    // ساخت بات‌ها در حالت آنلاین
+    if(isOnline) {
+      let botDefs = BOT_CONFIGS[selectedMode] || [];
+      bots = botDefs.map(b => ({
+        name: b.name,
+        emoji: b.emoji,
+        skill: b.skill,
+        money: mode.startMoney,
+        startMoney: mode.startMoney,
+        debt: 0,
+        internet: 0,
+        warehouse: ITEMS.map(i=>({ id:i.id, qty:0, avgBuy:0 })),
+        darkWarehouse: ITEMS.map(i=>({ id:i.id, qty:0, avgBuy:0, lockDays:0 })),
+        lastAction: '...',
+      }));
+    } else {
+      bots = [];
+    }
+  }
+
+  document.getElementById('startOverlay').classList.add('hidden');
+  document.getElementById('gameUI').classList.add('active');
+
+  // نمایش/مخفی پنل رنکینگ
+  let showRanking = isOnline && bots.length > 0;
+  document.getElementById('rankingLabel').style.display = showRanking ? 'block' : 'none';
+  document.getElementById('rankingPanel').style.display = showRanking ? 'block' : 'none';
+  document.getElementById('rankingSep').style.display = showRanking ? 'block' : 'none';
+
+  // آنلاین = بدون دکمه سیو
+  document.querySelector('button[onclick="saveGame()"]').style.display = isOnline ? 'none' : '';
+
+  renderAll();
+  showTab('market');
+
+  // Tutorial
+  let tutDone = localStorage.getItem('bazaar_tut_done');
+  if(G.mode === 'easy' && !tutDone && !saved) {
+    setTimeout(startTutorial, 600);
+  }
+
+  autoSave();
+}
+
+// =========================================================
+// SAVE / LOAD
+// =========================================================
+const SAVE_KEY = 'bazaar_saved_game_v8';
+
+function saveGame() {
+  if(isOnline) { toast('⚔️ حالت آنلاین سیو نداره!', 'bad'); return; }
+  G._bots = bots;
+  localStorage.setItem(SAVE_KEY, JSON.stringify(G));
+  toast('💾 بازی ذخیره شد!', 'info');
+}
+
+function autoSave() {
+  if(G._onlineMatchId) { syncOnlineState(); return; }
+  if(isOnline) return;
+  G._bots = bots;
+  localStorage.setItem(SAVE_KEY, JSON.stringify(G));
+}
+
+function loadSaved() {
+  try {
+    let d = localStorage.getItem(SAVE_KEY);
+    return d ? JSON.parse(d) : null;
+  } catch(e) { return null; }
+}
+
+function resetToMenu() {
+  if(liveMatchPollInterval) { clearInterval(liveMatchPollInterval); liveMatchPollInterval = null; }
+  if(onlineWaitInterval) { clearInterval(onlineWaitInterval); onlineWaitInterval = null; }
+  clearMatchSubscription();
+  localStorage.removeItem(SAVE_KEY);
+  document.getElementById('gameUI').classList.remove('active');
+  document.getElementById('gameOverOverlay').classList.add('hidden');
+  document.getElementById('startOverlay').classList.remove('hidden');
+  G = {};
+}
+
+// =========================================================
+// RENDER ALL
+// =========================================================
+function renderAll() {
+  if(!G.mode) return;
+  const mode = MODES[G.mode];
+
+  // Header stats
+  document.getElementById('hDay').textContent = P(G.day);
+  document.getElementById('hMaxDay').textContent = P(mode.days);
+  document.getElementById('hMoney').textContent = P(G.money);
+  document.getElementById('hDebt').textContent = P(G.debt);
+  document.getElementById('hGoal').textContent = P(mode.goal);
+  document.getElementById('hNet').textContent = P(G.internet);
+
+  document.getElementById('debtChip').style.display = G.debt > 0 ? 'flex' : 'none';
+  // Fix 9: وضعیت معامله با آیکون مشخص
+  let twEl = document.getElementById('tradeWarning');
+  let tsIcon = document.getElementById('tradeStatusIcon');
+  if(G.realTradedToday) {
+    twEl.style.borderColor = 'var(--green2)';
+    tsIcon.style.color = 'var(--green2)';
+    tsIcon.textContent = '✅ معامله واقعی انجام شد';
+  } else if(G.tradedToday) {
+    twEl.style.borderColor = 'var(--yellow2)';
+    tsIcon.style.color = 'var(--yellow2)';
+    tsIcon.textContent = '⚠️ معامله سودده نداری!';
+  } else {
+    twEl.style.borderColor = 'var(--red2)';
+    tsIcon.style.color = 'var(--red2)';
+    tsIcon.textContent = '⚠️ هنوز معامله نکردی!';
+  }
+
+  // Sidebar stats
+  document.getElementById('sideMoney').textContent = P(G.money)+'ت';
+  let profit = calcProfit();
+  let profitEl = document.getElementById('sideProfit');
+  profitEl.textContent = P(profit)+'ت';
+  profitEl.className = 'fw-800 ' + (profit >= 0 ? 'c-green' : 'c-red');
+  document.getElementById('sideDebt').textContent = P(G.debt)+'ت';
+  document.getElementById('sideDebtRow').style.display = G.debt > 0 ? 'flex' : 'none';
+  document.getElementById('sideStorage').textContent = P(calcStorageCost())+'ت';
+  document.getElementById('sideNeg').textContent = G.negUsedToday ? '❌ استفاده شد' : '✅ آزاد';
+  document.getElementById('sideNeg').className = 'fw-800 ' + (G.negUsedToday ? 'c-red' : 'c-green');
+  document.getElementById('sideDay').textContent = P(G.day);
+  document.getElementById('sideMaxDay').textContent = P(mode.days);
+  document.getElementById('sideInspect').textContent = P(Math.round(mode.inspectChance*100))+'٪';
+  document.getElementById('sideNet').textContent = P(G.internet)+' MB';
+
+  const modeColors = { easy:'var(--green2)', medium:'var(--yellow2)', hard:'#e07030', pro:'var(--red2)' };
+  document.getElementById('sideMode').innerHTML = `<span style="background:rgba(255,255,255,0.08); border-radius:6px; padding:2px 8px; color:${modeColors[G.mode]}; font-weight:800; font-size:0.72rem;">${mode.label}</span>`;
+
+  // Progress bars
+  let pct = Math.min(100, Math.max(0, (profit / mode.goal)*100));
+  document.getElementById('profitBar').style.width = pct+'%';
+  document.getElementById('profitLbl').textContent = P(profit)+'ت / '+P(mode.goal)+'ت';
+  let dPct = ((mode.days - G.day + 1) / mode.days) * 100;
+  document.getElementById('daysBar').style.width = dPct+'%';
+  document.getElementById('daysLbl').textContent = P(mode.days - G.day + 1)+' روز مانده';
+
+  // Quick capacity
+  let normalQty = G.warehouse.reduce((s,w)=>s+w.qty,0);
+  let darkQty = G.darkWarehouse.reduce((s,w)=>s+w.qty,0);
+  document.getElementById('quickCap').innerHTML =
+    `معمولی: ${P(normalQty)}/${P(mode.cap)}<br>زیرزمین: ${P(darkQty)}/${P(mode.cap)}`;
+
+  // Day label
+  document.getElementById('dayLbl').textContent = 'روز '+P(G.day);
+
+  // Render sub-sections
+  renderMarket();
+  renderSideInventory();
+  renderEventLog();
+  renderNetDisplay();
+
+  // وضعیت مرورگر در nav
+  let netBadge = document.getElementById('browserNetBadge');
+  if(netBadge) netBadge.style.display = G.internet > 0 ? 'none' : 'inline';
+  if(currentTab === 'browser' && currentBTab === 'dark') renderDarkBody();
+  if(currentTab === 'browser' && currentBTab === 'web') renderWebNews();
+  if(currentTab === 'browser' && currentBTab === 'chart') renderChart();
+  if(isOnline) renderRanking();
+}
+
+// =========================================================
+// CALC HELPERS
+// =========================================================
+// Fix 11: سود = پول نقد + ارزش فروش کالاها (قیمت روز) - سرمایه اولیه - بدهی
+function calcProfit() {
+  let invVal = 0;
+  G.warehouse.forEach(w => invVal += w.qty * (G.prices[w.id] || 0));
+  G.darkWarehouse.forEach(w => invVal += w.qty * (G.prices[w.id] || 0));
+  return (G.money + invVal) - G.startMoney - G.debt;
+}
+
+function calcStorageCost() {
+  const mode = MODES[G.mode];
+  let n = G.warehouse.reduce((s,w)=>s+w.qty,0) * mode.storageCost[0];
+  let d = G.darkWarehouse.reduce((s,w)=>s+w.qty,0) * mode.storageCost[1];
+  return n + d;
+}
+
+function normalCap() { return G.warehouse.reduce((s,w)=>s+w.qty,0); }
+function darkCap() { return G.darkWarehouse.reduce((s,w)=>s+w.qty,0); }
+
+// =========================================================
+// RENDER MARKET
+// =========================================================
+function renderMarket() {
+  const body = document.getElementById('marketBody');
+  body.innerHTML = '';
+  ITEMS.forEach(item => {
+    let price = G.prices[item.id];
+    let hist = G.priceHistory[item.id];
+    let prev = hist.length > 1 ? hist[hist.length-2] : price;
+    let diff = price - prev;
+    let pClass = diff > 0 ? 'price-up' : diff < 0 ? 'price-down' : 'price-same';
+    let bClass = diff > 0 ? 'badge-up' : diff < 0 ? 'badge-down' : 'badge-flat';
+    let bLabel = diff > 0 ? '▲ '+P(diff) : diff < 0 ? '▼ '+P(Math.abs(diff)) : '— ثابت';
+    let inv = G.warehouse.find(w=>w.id===item.id);
+    let hasSell = inv && inv.qty > 0;
+    let availableToSell = inv ? (inv.qty - (inv.lockedQty||0)) : 0;
+
+    body.innerHTML += `
+    <tr>
+      <td><span class="item-emoji">${item.icon}</span> ${item.name}</td>
+      <td><span class="${pClass}">${P(price)}ت</span></td>
+      <td><span class="badge ${bClass}">${bLabel}</span></td>
+      <td><input type="number" class="qty-in" id="qty-${item.id}" value="1" min="1" max="99"></td>
+      <td>
+        <div class="action-row">
+          <button class="btn btn-success btn-xs" id="buyBtn-${item.id}" onclick="openTrade('buy','${item.id}')">خرید</button>
+          ${availableToSell > 0 ? `<button class="btn btn-danger btn-xs" onclick="openTrade('sell','${item.id}')">فروش<span class="fs-sm" style="opacity:0.7;"> (${P(availableToSell)})</span></button>` : ''}
+          ${hasSell && availableToSell <= 0 ? `<span style="font-size:0.7rem; color:var(--yellow2);">🔒 تا فردا</span>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  });
+}
+
+// =========================================================
+// RENDER SIDE INVENTORY
+// =========================================================
+function renderSideInventory() {
+  let el = document.getElementById('sideInventory');
+  el.innerHTML = '';
+  let any = false;
+  ITEMS.forEach(item => {
+    let nw = G.warehouse.find(w=>w.id===item.id);
+    let dw = G.darkWarehouse.find(w=>w.id===item.id);
+    let n = nw?.qty||0, d = dw?.qty||0;
+    if(n+d > 0) {
+      any = true;
+      let locked = nw?.lockedQty || 0;
+      el.innerHTML += `
+      <div class="inv-row">
+        <div class="inv-item-name">${item.icon} ${item.name}</div>
+        <div style="text-align:left;">
+          ${n>0?`<div class="inv-qty">${P(n)}${locked>0?` <span style="font-size:0.65rem;color:var(--yellow2);">🔒${P(locked)}</span>`:''}</div>`:''}
+          ${d>0?`<div class="inv-lock">🕳️${P(d)}${dw.lockDays>0?' 🔒'+P(dw.lockDays):''}</div>`:''}
+        </div>
+      </div>`;
+    }
+  });
+  if(!any) el.innerHTML = `<div style="color:var(--text3); font-size:0.75rem; text-align:center; padding:10px;">انبار خالی</div>`;
+}
+
+// =========================================================
+// RENDER EVENT LOG
+// =========================================================
+function renderEventLog() {
+  let el = document.getElementById('eventLog');
+  el.innerHTML = '';
+  let evs = G.events.slice().reverse().slice(0,20);
+  evs.forEach(e => {
+    let cls = 'ev-neutral';
+    if(e.includes('✅')||e.includes('💸')||e.includes('🎁')||e.includes('🍀')||e.includes('💰')||e.includes('خوب')||e.includes('مجانی')) cls = 'ev-good';
+    else if(e.includes('❌')||e.includes('🔥')||e.includes('🦹')||e.includes('📉')||e.includes('بازرس')||e.includes('جریمه')||e.includes('مصادره')) cls = 'ev-bad';
+    else if(e.includes('📡')||e.includes('خرید')||e.includes('فروش')) cls = 'ev-info';
+    else if(e.includes('🎲')||e.includes('رویداد')||e.includes('جشن')) cls = 'ev-warn';
+    el.innerHTML += `<div class="event-entry ${cls}">${e}</div>`;
+  });
+}
+
+// =========================================================
+// RENDER WAREHOUSE
+// =========================================================
+function renderWarehouse() {
+  const mode = MODES[G.mode];
+  let nEl = document.getElementById('whNormal');
+  let dEl = document.getElementById('whDark');
+  nEl.innerHTML = ''; dEl.innerHTML = '';
+  let nQty = 0, dQty = 0;
+
+  ITEMS.forEach(item => {
+    let nw = G.warehouse.find(w=>w.id===item.id);
+    let dw = G.darkWarehouse.find(w=>w.id===item.id);
+
+    if(nw && nw.qty > 0) {
+      nQty += nw.qty;
+      let locked = nw.lockedQty || 0;
+      let available = nw.qty - locked;
+      let pnl = nw.qty * (G.prices[item.id] - nw.avgBuy);
+      nEl.innerHTML += `
+      <div class="inv-row" style="flex-wrap:wrap; gap:6px;">
+        <div class="inv-row-name">${item.icon} ${item.name}</div>
+        <div>
+          <div class="inv-qty">${P(nw.qty)} عدد</div>
+          ${locked > 0 ? `<div class="inv-lock">🔒 ${P(locked)} قفل تا فردا / ${P(available)} آزاد</div>` : ''}
+          <div class="c-text3 fs-sm">میانگین: ${P(nw.avgBuy)}ت</div>
+          <div class="${pnl>=0?'inv-pnl-pos':'inv-pnl-neg'}">سود/زیان: ${P(pnl)}ت</div>
+        </div>
+      </div>`;
+    }
+
+    if(dw && dw.qty > 0) {
+      dQty += dw.qty;
+      dEl.innerHTML += `
+      <div class="inv-row" style="flex-wrap:wrap; gap:8px; border-color:rgba(112,64,160,0.4);">
+        <div class="inv-row-name">${item.icon} ${item.name}</div>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
+          <span class="inv-qty" style="color:#a060e0;">${P(dw.qty)} عدد</span>
+          <span class="c-text3 fs-sm">میانگین: ${P(dw.avgBuy)}ت</span>
+          ${dw.lockDays>0
+            ? `<span class="inv-lock">🔒 ${P(dw.lockDays)} روز قفل</span>`
+            : `<span class="c-green fs-sm">✅ آماده فروش</span>
+               <div style="display:flex;gap:4px;margin-top:2px;">
+                 <input type="number" class="qty-in" id="dwqty-${item.id}" value="1" min="1" style="width:44px;">
+                 <button class="btn btn-danger btn-xs" onclick="openTradeFromWh('darksell','${item.id}')">فروش</button>
+               </div>`
+          }
+        </div>
+      </div>`;
+    }
+  });
+
+  if(nQty===0) nEl.innerHTML = `<div class="c-text3 fs-sm text-center" style="padding:10px;">خالی</div>`;
+  if(dQty===0) dEl.innerHTML = `<div class="c-text3 fs-sm text-center" style="padding:10px;">خالی</div>`;
+
+  let nPct = Math.min(100, (nQty/mode.cap)*100);
+  let dPct = Math.min(100, (dQty/mode.cap)*100);
+  document.getElementById('capNormalBar').style.width = nPct+'%';
+  document.getElementById('capNormalBar').className = 'cap-fill '+(nPct>=100?'cap-full':'cap-normal');
+  document.getElementById('capNormalLbl').textContent = P(nQty)+'/'+P(mode.cap);
+  document.getElementById('capDarkBar').style.width = dPct+'%';
+  document.getElementById('capDarkBar').className = 'cap-fill '+(dPct>=100?'cap-full':'cap-dark');
+  document.getElementById('capDarkLbl').textContent = P(dQty)+'/'+P(mode.cap);
+}
+
+// =========================================================
+// RENDER DARK BODY
+// =========================================================
+function renderDarkBody() {
+  let nMsg = document.getElementById('noNetMsg');
+  let dContent = document.getElementById('darkContent');
+  if(G.internet <= 0) {
+    nMsg.style.display = 'block';
+    dContent.style.display = 'none';
+    return;
+  }
+  nMsg.style.display = 'none';
+  dContent.style.display = 'block';
+
+  let el = document.getElementById('darkBody');
+  el.innerHTML = '';
+  ITEMS.forEach(item => {
+    let dp = G.darkPrices[item.id];
+    let np = G.prices[item.id];
+    let discPct = Math.round((1-dp/np)*100);
+    let dw = G.darkWarehouse.find(w=>w.id===item.id);
+    let mode = MODES[G.mode];
+
+    el.innerHTML += `
+    <div class="dark-item">
+      <div>
+        <div style="font-size:1.2rem;">${item.icon}</div>
+      </div>
+      <div style="flex:1; padding:0 10px;">
+        <div style="font-weight:700;">${item.name}</div>
+        <div class="dark-lock">🔒 ${P(mode.darkLock)} روز قفل • زیرزمین</div>
+        ${dw&&dw.qty>0?`<div class="c-cyan fs-sm">موجودی: ${P(dw.qty)}`+(dw.lockDays>0?` 🔒${P(dw.lockDays)}`:' ✅')+`</div>`:''}
+      </div>
+      <div style="text-align:left;">
+        <div class="dark-price">${P(dp)}ت</div>
+        <div class="dark-discount">↓ ${P(discPct)}٪ تخفیف</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px; margin-right:8px;">
+        <input type="number" class="qty-in" id="dqty-${item.id}" value="1" min="1">
+        <button class="btn btn-success btn-xs" onclick="openTrade('darkbuy','${item.id}')">خرید</button>
+        ${dw&&dw.qty>0&&dw.lockDays<=0?`<button class="btn btn-danger btn-xs" onclick="openTrade('darksell','${item.id}')">فروش</button>`:''}
+      </div>
+    </div>`;
+  });
+}
+
+// =========================================================
+// RENDER WEB NEWS
+// =========================================================
+function renderWebNews() {
+  let el = document.getElementById('webNews');
+  if(!el) return;
+  el.innerHTML = ITEMS.map(item => {
+    let cur = G.prices[item.id];
+    let hist = G.priceHistory[item.id];
+    let prev = hist.length>1?hist[hist.length-2]:cur;
+    let trend = cur>prev?'📈 افزایش یافت':'📉'+(cur<prev?' کاهش یافت':' تغییر نکرد');
+    return `<div style="margin-bottom:4px;">• ${item.icon} <strong>${item.name}</strong>: ${P(cur)}ت — ${trend}</div>`;
+  }).join('');
+}
+
+// =========================================================
+// RENDER NET DISPLAY
+// =========================================================
+function renderNetDisplay() {
+  let el = document.getElementById('netDisplay');
+  if(el) el.textContent = P(G.internet)+' MB';
+  let sideEl = document.getElementById('sideNet');
+  if(sideEl) sideEl.textContent = P(G.internet)+' MB';
+
+  // Net packages
+  let pkgEl = document.getElementById('netPackages');
+  if(!pkgEl) return;
+  let np = G.netPrices;
+  pkgEl.innerHTML = `
+    <div class="net-pkg" onclick="buyInternet(1024*1,${np.p1})">
+      <div><div class="net-pkg-name">📶 بسته ۱ گیگ (۵ روز)</div><div class="fs-sm c-text3">1024 MB</div></div>
+      <div class="net-pkg-price">${P(np.p1)}ت</div>
+    </div>
+    <div class="net-pkg" onclick="buyInternet(1024*2,${np.p2})">
+      <div><div class="net-pkg-name">📶📶 بسته ۲ گیگ (۵ روز)</div><div class="fs-sm c-text3">2048 MB</div></div>
+      <div class="net-pkg-price">${P(np.p2)}ت</div>
+    </div>
+    <div class="net-pkg" onclick="buyInternet(1024*10,${np.p10})">
+      <div><div class="net-pkg-name">📶📶📶 بسته ۱۰ گیگ (۱۰ روز)</div><div class="fs-sm c-text3">10240 MB</div></div>
+      <div class="net-pkg-price">${P(np.p10)}ت</div>
+    </div>
+    ${G.mode==='pro'?'<div class="fs-sm c-text3" style="text-align:center; margin-top:6px;">⚠️ قیمت‌ها در مود پرو هر روز نوسان دارند</div>':''}
+  `;
+
+  let barEl = document.getElementById('netBar');
+  if(barEl) barEl.style.width = Math.min(100,(G.internet/10240)*100)+'%';
+}
+
+// =========================================================
+// RENDER CHART
+// =========================================================
+function renderChart() {
+  let canvas = document.getElementById('priceChart');
+  if(!canvas) return;
+  const perfMode = localStorage.getItem('bazaar_performance') === 'on';
+  let ctx = canvas.getContext('2d');
+  let W = canvas.offsetWidth || 580, H = 280;
+  canvas.width = W; canvas.height = H;
+
+  let bg = isDark ? '#1a1208' : '#f5f0e8';
+  let gridCol = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)';
+  ctx.fillStyle = bg;
+  ctx.fillRect(0,0,W,H);
+
+  // Grid lines
+  ctx.strokeStyle = gridCol;
+  ctx.lineWidth = 1;
+  for(let i=0;i<5;i++){
+    let y = 30 + (i/4)*(H-60);
+    ctx.beginPath(); ctx.moveTo(40,y); ctx.lineTo(W-10,y); ctx.stroke();
+  }
+
+  const colors = ['#5cb030','#d4a010','#e07030','#a060e0'];
+  const maxDays = 5;
+
+  // Find global min/max
+  let allVals = [];
+  ITEMS.forEach(item => {
+    let d = (G.priceHistory[item.id]||[]).slice(-maxDays);
+    allVals = allVals.concat(d);
+  });
+  let gMin = Math.min(...allVals)*0.9, gMax = Math.max(...allVals)*1.1;
+  if(gMax===gMin) gMax = gMin+10;
+
+  ITEMS.forEach((item,idx) => {
+    let data = (G.priceHistory[item.id]||[]).slice(-maxDays);
+    if(data.length < 1) return;
+
+    ctx.strokeStyle = colors[idx];
+    ctx.lineWidth = 2.5;
+    if(!perfMode) {
+      ctx.shadowColor = colors[idx];
+      ctx.shadowBlur = 5;
+    }
+    ctx.beginPath();
+
+    data.forEach((val,i) => {
+      let x = 40 + (i/(maxDays-1||1))*(W-55);
+      let y = 30 + ((gMax-val)/(gMax-gMin))*(H-60);
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+
+      // Dot
+      ctx.save();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = colors[idx];
+      ctx.beginPath();
+      ctx.arc(x,y,3,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    });
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Label
+    ctx.fillStyle = colors[idx];
+    ctx.font = `bold 11px Vazirmatn`;
+    ctx.textAlign = 'right';
+    let lastX = 40 + ((data.length-1)/(maxDays-1||1))*(W-55);
+    let lastY = 30 + ((gMax-data[data.length-1])/(gMax-gMin))*(H-60);
+    ctx.fillText(item.icon+item.name, lastX-6, lastY-7);
+  });
+
+  // X labels
+  let textCol = isDark ? '#806840' : '#907040';
+  ctx.fillStyle = textCol;
+  ctx.font = '10px Vazirmatn';
+  ctx.textAlign = 'center';
+  for(let i=0;i<maxDays;i++){
+    let x = 40 + (i/(maxDays-1))*(W-55);
+    let dayNum = Math.max(1, G.day - (maxDays-1) + i);
+    ctx.fillText('ر'+P(dayNum), x, H-8);
+  }
+
+  // Analysis
+  let analysisEl = document.getElementById('chartAnalysis');
+  if(!analysisEl) return;
+  let html = '<div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;">';
+  ITEMS.forEach((item,idx) => {
+    let hist = (G.priceHistory[item.id]||[]).slice(-5);
+    if(hist.length<2) return;
+    let first = hist[0], last = hist[hist.length-1];
+    let chg = ((last-first)/first)*100;
+    let trend, predict;
+    if(chg>15){ trend='📈📈 صعودی قوی'; predict='⚠️ احتمال گران‌تر شدن فردا'; }
+    else if(chg>3){ trend='📈 صعودی ملایم'; predict='📈 احتمال افزایش قیمت'; }
+    else if(chg<-15){ trend='📉📉 نزولی قوی'; predict='🔥 احتمال ارزان‌تر شدن فردا'; }
+    else if(chg<-3){ trend='📉 نزولی ملایم'; predict='📉 احتمال کاهش قیمت'; }
+    else{ trend='➖ ثابت'; predict='➖ ریسک متوسط'; }
+
+    // نمایش تأثیر تقاضا
+    let demand = G.demandTracker && G.demandTracker[item.id] || 0;
+    let demandNote = '';
+    if(demand > 0) demandNote = `<div style="font-size:0.65rem; color:#e07030; margin-top:2px;">🛒 تقاضا: ${P(demand)} — احتمال افت فردا</div>`;
+
+    html += `<div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:8px 10px; flex:1; min-width:110px;">
+      <div style="font-weight:800; color:${colors[idx]}; margin-bottom:3px;">${item.icon} ${item.name}</div>
+      <div class="fs-sm c-text2">${trend}</div>
+      <div style="font-size:0.65rem; color:var(--text3); margin-top:2px;">${predict}</div>
+      ${demandNote}
+    </div>`;
+  });
+  html += '</div>';
+  analysisEl.innerHTML = html;
+}
+
+// =========================================================
+// TABS
+// =========================================================
+function showTab(tab) {
+  // چک اینترنت برای تب مرورگر
+  if(tab === 'browser' && G.internet <= 0) {
+    toast('📡 برای استفاده از مرورگر باید اینترنت داشته باشی!', 'bad', 3000);
+    // هایلایت کن تب اینترنت رو که بره بخره
+    document.getElementById('nav-internet')?.classList.add('highlight-tutorial');
+    setTimeout(() => document.getElementById('nav-internet')?.classList.remove('highlight-tutorial'), 2000);
+    return;
+  }
+
+  ['market','browser','warehouse','internet'].forEach(t => {
+    document.getElementById(`tab-${t}`)?.classList.toggle('hidden', t!==tab);
+    document.getElementById(`nav-${t}`)?.classList.toggle('active', t===tab);
+  });
+  currentTab = tab;
+  if(tab==='warehouse') renderWarehouse();
+  if(tab==='browser') showBTab(currentBTab);
+  if(tab==='internet') renderNetDisplay();
+}
+
+function showBTab(tab) {
+  ['web','dark','chart','cal'].forEach(t=>{
+    document.getElementById(`bpanel-${t}`)?.classList.toggle('hidden', t!==tab);
+    document.getElementById(`btab-${t}`)?.classList.toggle('active', t===tab);
+  });
+  currentBTab = tab;
+
+  // مصرف اینترنت فقط اولین بار برای هر تب در هر روز
+  if(!G.browserTabsVisited) G.browserTabsVisited = {};
+  const tabKey = `${G.day}_${tab}`;
+  const costs = { web:100, dark:100, chart:100, cal:50 };
+  if(!G.browserTabsVisited[tabKey] && costs[tab]) {
+    if(G.internet >= costs[tab]) {
+      G.internet -= costs[tab];
+      G.browserTabsVisited[tabKey] = true;
+      renderNetDisplay();
+    } else if(tab === 'dark') {
+      // اگر اینترنت کافی نیست برای دارک وب، نمایش پیام
+    }
+  }
+
+  if(tab==='dark') renderDarkBody();
+  if(tab==='web') renderWebNews();
+  if(tab==='chart') setTimeout(renderChart, 80);
+  if(tab==='cal') renderCalendar();
+}
+
+function renderCalendar() {
+  const el = document.getElementById('calendarBody');
+  if(!el) return;
+  const days = ['شنبه','یک‌شنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنج‌شنبه','جمعه'];
+  const todayIdx = (G.day - 1) % 7;
+
+  let html = `<div style="display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:12px;">`;
+  days.forEach((d, i) => {
+    const isToday = i === todayIdx;
+    const isPast = i < todayIdx;
+    html += `<div style="
+      text-align:center; padding:8px 2px; border-radius:8px; font-size:0.68rem; font-weight:${isToday?'800':'500'};
+      background:${isToday?'var(--accent)':'var(--bg2)'}; color:${isToday?'#fff':'var(--text2)'};
+      border:1px solid ${isToday?'var(--accent2)':'var(--border)'};
+      opacity:${isPast?'0.5':'1'};">
+      ${d}<br>
+      ${isToday?'<span style="font-size:0.58rem;">امروز</span>':isPast?'<span style="font-size:0.65rem; color:var(--text3);">✓</span>':''}
+    </div>`;
+  });
+  html += `</div>`;
+
+  html += `<div style="background:var(--bg2); border-radius:10px; padding:12px; font-size:0.8rem; line-height:2.2; color:var(--text2);">
+    <div>📅 روز بازی: <strong style="color:var(--accent2);">${P(G.day)}</strong></div>
+    <div>📆 روز هفته: <strong style="color:var(--accent2);">${days[todayIdx]}</strong></div>
+    <div>🎯 روزهای مانده: <strong style="color:var(--yellow2);">${P(MODES[G.mode].days - G.day + 1)}</strong></div>
+    <div style="margin-top:8px; padding-top:8px; border-top:1px solid var(--border); font-size:0.7rem; color:var(--text3);">
+      ⚠️ این بخش آزمایشیه — آپدیت‌های بیشتر به زودی!
+    </div>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+function useInternet(mb) {
+  if(G.internet >= mb) {
+    G.internet -= mb;
+    renderNetDisplay();
+  }
+}
+
+// =========================================================
+// INTERNET PURCHASE
+// =========================================================
+function buyInternet(mb, cost) {
+  if(G.money < cost) { toast('💸 پول کافی نداری!', 'bad'); return; }
+  G.money -= cost;
+  G.internet += mb;
+  G.events.push(`📡 خرید ${P(Math.round(mb/1024))} گیگ اینترنت — ${P(cost)}ت`);
+  // خرید اینترنت = راه فرار وقتی انبار پر و کالا قفله
+  G.tradedToday = true;
+  G.realTradedToday = true;
+  toast(`📡 ${P(Math.round(mb/1024))} گیگ اینترنت اضافه شد!`, 'info');
+  renderAll();
+  autoSave();
+}
+
+// =========================================================
+// TRADE MODAL
+// =========================================================
+function openTrade(action, itemId) {
+  let item = itemOf(itemId);
+  let price = (action==='darkbuy') ? G.darkPrices[itemId] : G.prices[itemId];
+  let qtyId = action.includes('dark') ? `dqty-${itemId}` : `qty-${itemId}`;
+  let qtyEl = document.getElementById(qtyId);
+  let qty = qtyEl ? parseInt(qtyEl.value)||1 : 1;
+
+  tradeState = { action, itemId, price, item, qty };
+  // Fix 2: ریست کامل negState
+  negState = { active: false, currentPrice: price, bestAccepted: null };
+
+  const titles = { buy:'خرید', sell:'فروش', darkbuy:'خرید دارک', darksell:'فروش دارک' };
+  const icons = { buy:'🛒', sell:'💰', darkbuy:'🕸️', darksell:'💰' };
+  const confs = { buy:'btn-success', sell:'btn-danger', darkbuy:'btn-success', darksell:'btn-danger' };
+  const confText = { buy:'✅ خرید', sell:'💰 فروش', darkbuy:'✅ خرید دارک', darksell:'💰 فروش' };
+
+  document.getElementById('tradeIcon').textContent = icons[action];
+  document.getElementById('tradeTitle').textContent = titles[action]+' '+item.name;
+  document.getElementById('tradeDesc').textContent = item.icon+' قیمت پایه: '+P(price)+'ت';
+  document.getElementById('tradeQty').value = qty;
+  let confirmBtn = document.getElementById('tradeConfirmBtn');
+  confirmBtn.className = `btn ${confs[action]}`;
+  confirmBtn.style.flex = '2';
+  confirmBtn.textContent = confText[action];
+
+  // Show negotiation button only for buy
+  // مذاکره فقط برای فروش — نه خرید
+  let negOpenBtn = document.getElementById('negOpenBtn');
+  let canNeg = (action==='sell' || action==='darksell') && !G.negUsedToday && !(G.negBlockedItems && G.negBlockedItems[itemId]);
+  negOpenBtn.style.display = canNeg ? 'block' : 'none';
+
+  document.getElementById('negPanel').classList.add('hidden');
+
+  updTradeUI();
+  document.getElementById('tradeOverlay').classList.remove('hidden');
+}
+
+function updTradeUI() {
+  let qty = parseInt(document.getElementById('tradeQty').value)||1;
+  tradeState.qty = qty;
+  // قیمت نهایی: اگر مذاکره فروش انجام شده از negState بگیر
+  let price = (negState.bestAccepted != null) ? negState.bestAccepted : tradeState.price;
+
+  // جشنواره — فقط برای خرید
+  let displayPrice = price;
+  if((tradeState.action==='buy'||tradeState.action==='darkbuy') && G.festivalActive && !G.festivalUsed) {
+    displayPrice = Math.round(price * 0.5);
+  }
+
+  document.getElementById('tradeUnit').textContent = P(displayPrice)+'ت'+(G.festivalActive&&!G.festivalUsed&&(tradeState.action==='buy'||tradeState.action==='darkbuy')?' 🎉':'');
+  document.getElementById('tradeTotal').textContent = P(displayPrice*qty)+'ت';
+
+  let extra = '';
+  let { action } = tradeState;
+  if(action==='buy'||action==='darkbuy') {
+    let rem = G.money - displayPrice*qty;
+    extra = rem >= 0 ? `باقی‌مانده: ${P(rem)}ت` : '❌ پول کافی نداری!';
+    if(action==='darkbuy') extra += ' • انبار زیرزمین';
+  } else if(action==='sell'||action==='darksell') {
+    extra = `درآمد: ${P(displayPrice*qty)}ت`;
+    if(negState.bestAccepted != null) extra += ` 🤝 (مذاکره: +${P(negState.bestAccepted - tradeState.price)}ت/عدد)`;
+  }
+  document.getElementById('tradeExtra').textContent = extra;
+}
+
+function chgQty(delta) {
+  let inp = document.getElementById('tradeQty');
+  inp.value = Math.max(1, (parseInt(inp.value)||1)+delta);
+  updTradeUI();
+}
+
+function openTradeFromWh(action, itemId) {
+  let qtyEl = document.getElementById(`dwqty-${itemId}`);
+  let qty = qtyEl ? parseInt(qtyEl.value)||1 : 1;
+  // قیمت فروش = قیمت بازار جاری
+  let price = G.prices[itemId];
+  let item = itemOf(itemId);
+  tradeState = { action, itemId, price, item, qty };
+  negState = { active:false, currentPrice:price, bestAccepted:null, done:false };
+
+  document.getElementById('tradeIcon').textContent = '💰';
+  document.getElementById('tradeTitle').textContent = 'فروش '+item.name+' (زیرزمین)';
+  document.getElementById('tradeDesc').textContent = item.icon+' قیمت بازار: '+P(price)+'ت';
+  document.getElementById('tradeQty').value = qty;
+  let confirmBtn = document.getElementById('tradeConfirmBtn');
+  confirmBtn.className = 'btn btn-danger';
+  confirmBtn.style.flex = '2';
+  confirmBtn.textContent = '💰 فروش';
+
+  // مذاکره فروش
+  let canNeg = !G.negUsedToday && !(G.negBlockedItems && G.negBlockedItems[itemId]);
+  document.getElementById('negOpenBtn').style.display = canNeg ? 'block' : 'none';
+  document.getElementById('negPanel').classList.add('hidden');
+
+  updTradeUI();
+  document.getElementById('tradeOverlay').classList.remove('hidden');
+}
+
+function cancelTrade() {
+  document.getElementById('tradeOverlay').classList.add('hidden');
+  tradeState = {}; negState = {};
+}
+
+function confirmTrade() {
+  let { action, itemId, item, qty } = tradeState;
+  // برای خرید: قیمت بازار (بدون مذاکره). برای فروش: قیمت مذاکره‌شده یا بازار
+  let price = tradeState.price;
+  if((action==='sell'||action==='darksell') && negState.bestAccepted != null) {
+    price = negState.bestAccepted;
+  }
+
+  // جشنواره — فقط خرید
+  if((action==='buy'||action==='darkbuy') && G.festivalActive && !G.festivalUsed) {
+    price = Math.round(price * 0.5);
+    G.festivalUsed = true;
+    toast('🎉 جشنواره! ۵۰٪ تخفیف اعمال شد!', 'good');
+  }
+
+  let total = price * qty;
+  const mode = MODES[G.mode];
+
+  if(action==='buy') {
+    if(G.money < total) { toast('💸 پول کافی نداری!', 'bad'); return; }
+    let cap = normalCap();
+    if(cap + qty > mode.cap) { toast(`📦 ظرفیت انبار پر است! (${P(mode.cap)} عدد)`, 'bad'); return; }
+    if(item.isCarpet) {
+      let cur = G.warehouse.find(w=>w.id===itemId).qty;
+      if(cur+qty > 5) { toast('🏺 حداکثر ۵ فرش در انبار معمولی!', 'bad'); return; }
+    }
+    G.money -= total;
+    let w = G.warehouse.find(w=>w.id===itemId);
+    let prevTotal = w.qty * w.avgBuy;
+    w.qty += qty;
+    w.avgBuy = w.qty > 0 ? Math.round((prevTotal + total) / w.qty) : 0;
+    // قفل فروش تا فردا
+    if(!w.lockedQty) w.lockedQty = 0;
+    w.lockedQty += qty;
+    // ردیابی تقاضا برای قیمت‌دهی پویا
+    if(!G.demandTracker) G.demandTracker = {};
+    G.demandTracker[itemId] = (G.demandTracker[itemId]||0) + qty;
+    G.tradedToday = true;
+    G.realTradedToday = true;
+    G.events.push(`✅ خرید ${P(qty)} ${nameOf(itemId)} به ${P(total)}ت (قفل تا فردا)`);
+    toast(`✅ ${P(qty)} عدد ${nameOf(itemId)} خریدی! تا فردا قفل فروشه.`, 'good');
+
+  } else if(action==='sell') {
+    let w = G.warehouse.find(w=>w.id===itemId);
+    if(!w||w.qty<qty) { toast('📦 موجودی کافی نداری!', 'bad'); return; }
+
+    // چک بلاک فروش (مذاکره رد شده امروز)
+    if(G.negBlockedItems && G.negBlockedItems[itemId]) {
+      toast(`❌ ${nameOf(itemId)} امروز بلاکه! فردا بفروش.`, 'bad'); return;
+    }
+
+    // قفل خرید همون روز
+    let locked = w.lockedQty || 0;
+    let available = w.qty - locked;
+    if(available < qty) {
+      if(available <= 0) {
+        toast(`🔒 همه ${nameOf(itemId)}هات امروز خریداری شدن! فردا بفروش.`, 'bad', 3500);
+      } else {
+        toast(`🔒 فقط ${P(available)} عدد آزاده، ${P(locked)} تا فردا قفله!`, 'bad', 3500);
+      }
+      return;
+    }
+
+    let income = price * qty;
+    if(G.debt > 0) {
+      let pay = Math.min(G.debt, income);
+      G.debt -= pay; income -= pay;
+      if(pay>0) G.events.push(`💳 ${P(pay)}ت بدهی تسویه شد`);
+    }
+    G.money += income;
+    w.qty -= qty;
+    if(w.qty === 0) { w.avgBuy = 0; w.lockedQty = 0; }
+    G.tradedToday = true;
+    G.realTradedToday = true;
+    if(negState.bestAccepted != null) G.negUsedToday = true;
+    let negNote = negState.bestAccepted != null ? ` 🤝(+${P(negState.bestAccepted - tradeState.price)}ت/عدد)` : '';
+    G.events.push(`💰 فروش ${P(qty)} ${nameOf(itemId)} به ${P(price*qty)}ت${negNote}`);
+    toast(`💰 ${P(qty)} عدد ${nameOf(itemId)} فروختی!`, 'good');
+
+  } else if(action==='darkbuy') {
+    if(G.internet <= 0) { toast('📡 اینترنت نداری!', 'bad'); return; }
+    if(G.money < total) { toast('💸 پول کافی نداری!', 'bad'); return; }
+    // Fix 4: چک ظرفیت زیرزمین و محدودیت فرش
+    let dcap = darkCap();
+    if(dcap + qty > mode.cap) { toast(`🕳️ ظرفیت زیرزمین پر است! (${P(mode.cap)} عدد)`, 'bad'); return; }
+    if(item.isCarpet) {
+      let cur = G.darkWarehouse.find(w=>w.id===itemId).qty;
+      if(cur + qty > 5) { toast('🏺 حداکثر ۵ فرش در زیرزمین!', 'bad'); return; }
+    }
+    G.money -= total;
+    let dw = G.darkWarehouse.find(w=>w.id===itemId);
+    // Fix 8: avgBuy درست
+    let prevTotal = dw.qty * dw.avgBuy;
+    dw.qty += qty;
+    dw.avgBuy = dw.qty > 0 ? Math.round((prevTotal + total) / dw.qty) : 0;
+    dw.lockDays = mode.darkLock;
+    // ردیابی تقاضا
+    if(!G.demandTracker) G.demandTracker = {};
+    G.demandTracker[itemId] = (G.demandTracker[itemId]||0) + qty;
+    G.tradedToday = true;
+    G.events.push(`🕸️ خرید دارک ${P(qty)} ${nameOf(itemId)} — قفل ${P(mode.darkLock)} روز`);
+    toast(`🕸️ خرید دارک انجام شد! قفل ${P(mode.darkLock)} روز`, 'info');
+    // خرید دارک = معامله واقعی حساب میشه
+    G.realTradedToday = true;
+
+  } else if(action==='darksell') {
+    let dw = G.darkWarehouse.find(w=>w.id===itemId);
+    if(!dw||dw.qty<qty) { toast('📦 موجودی کافی نداری!', 'bad'); return; }
+    if(dw.lockDays>0) { toast('🔒 هنوز قفل است!', 'bad'); return; }
+    // فروش دارک با قیمت بازار عادی
+    let sellPrice = G.prices[itemId];
+    let income = sellPrice * qty;
+    if(G.debt>0){
+      let pay=Math.min(G.debt,income); G.debt-=pay; income-=pay;
+      if(pay>0) G.events.push(`💳 ${P(pay)}ت بدهی تسویه شد`);
+    }
+    G.money += income;
+    dw.qty -= qty;
+    if(dw.qty === 0) dw.avgBuy = 0;
+    G.tradedToday = true;
+    G.events.push(`💰 فروش دارک ${P(qty)} ${nameOf(itemId)} به ${P(sellPrice*qty)}ت`);
+    toast('💰 فروش از زیرزمین انجام شد!', 'good');
+  }
+
+  cancelTrade();
+  // Fix 10: autoSave بعد از هر معامله
+  autoSave();
+  renderAll();
+
+  // Tutorial progress
+  if(tutActive) advanceTutorial(action);
+}
+
+// =========================================================
+// NEGOTIATION
+// =========================================================
+function openNeg() {
+  if(G.negUsedToday) { toast('🤝 امروز مذاکره کردی!', 'bad'); return; }
+  if(G.negBlockedItems && G.negBlockedItems[tradeState.itemId]) {
+    toast('❌ این کالا امروز رد شد، فردا بفروش!', 'bad'); return;
+  }
+  let price = tradeState.price;
+  negState = { active:true, currentPrice:price, bestAccepted:null, done:false };
+  document.getElementById('negPanel').classList.remove('hidden');
+  document.getElementById('negStep').textContent = `قیمت بازار: ${P(price)}ت — چقدر بیشتر می‌خوای؟`;
+  document.getElementById('negPrice').textContent = P(price)+'ت';
+  document.getElementById('negAcceptBtn').style.display = 'none';
+
+  // ریست دکمه‌ها
+  document.querySelectorAll('.neg-btns button').forEach(b => {
+    b.disabled = false; b.style.opacity = ''; b.style.cursor = '';
+  });
+
+  let isCarpet = tradeState.item.isCarpet;
+  // گران‌تر فروختن: درخواست اضافه قیمت
+  document.getElementById('negLargBtn').textContent = isCarpet ? '+۵۰ت گران‌تر' : '+۱۵ت گران‌تر';
+  document.getElementById('negLargBtn').onclick = () => negRequest(isCarpet?50:15);
+  // آپدیت دکمه‌های دیگر هم
+  document.querySelector('.neg-btns button:nth-child(1)').textContent = '+۵ت گران‌تر';
+  document.querySelector('.neg-btns button:nth-child(1)').onclick = () => negRequest(5);
+  document.querySelector('.neg-btns button:nth-child(2)').textContent = '+۱۰ت گران‌تر';
+  document.querySelector('.neg-btns button:nth-child(2)').onclick = () => negRequest(10);
+}
+
+function negRequest(amount) {
+  let orig = tradeState.price;
+  let proposed = (negState.currentPrice || orig) + amount;
+  // شانس قبول: هرچه گران‌تر، کمتر قبول میشه
+  let overPct = ((proposed - orig) / orig) * 100;
+  let chance = Math.max(5, 70 - overPct * 1.5);
+  let accepted = Math.random() * 100 < chance;
+
+  if(accepted) {
+    negState.bestAccepted = proposed;
+    negState.currentPrice = proposed;
+    document.getElementById('negStep').textContent = `✅ قبول کرد! ${P(proposed)}ت می‌خره. می‌تونی بیشتر بخوای یا همین رو قبول کنی.`;
+    document.getElementById('negPrice').textContent = P(proposed)+'ت';
+    document.getElementById('negAcceptBtn').style.display = 'inline-flex';
+    updTradeUI();
+  } else {
+    // رد کرد = این کالا امروز قابل فروش نیست
+    G.negUsedToday = true;
+    if(!G.negBlockedItems) G.negBlockedItems = {};
+    G.negBlockedItems[tradeState.itemId] = true;
+    negState.done = true;
+
+    document.getElementById('negStep').textContent = `❌ رد کرد و رفت! دیگه نمیتونی ${nameOf(tradeState.itemId)} رو امروز بفروشی.`;
+    document.getElementById('negPrice').textContent = '— فروش امروز بلاکه';
+    document.querySelectorAll('.neg-btns button:not(#negAcceptBtn)').forEach(b => {
+      b.disabled = true; b.style.opacity = '0.4'; b.style.cursor = 'not-allowed';
+    });
+    document.getElementById('negOpenBtn').style.display = 'none';
+    autoSave();
+  }
+}
+
+function negAccept() {
+  document.getElementById('negPanel').classList.add('hidden');
+  G.negUsedToday = true;
+  toast(`🤝 فروش به قیمت ${P(negState.bestAccepted)}ت تأیید شد!`, 'good');
+  updTradeUI();
+}
+
+// =========================================================
+// RANDOM EVENTS
+// =========================================================
+const EVENTS_LIST = [
+  { name:'آتش‌سوزی بازار', icon:'🔥', type:'bad', apply(g){
+    ITEMS.forEach(i=>g.prices[i.id]=Math.max(18,Math.round(g.prices[i.id]*0.5)));
+    return 'آتش‌سوزی در بازار! قیمت‌ها نصف شدند!';
+  }},
+  { name:'بار برگشتی', icon:'📦', type:'warn', apply(g){
+    ITEMS.forEach(i=>g.prices[i.id]=Math.round(g.prices[i.id]*0.70));
+    return 'بار برگشتی! ۳۰٪ تخفیف روی همه کالاها!';
+  }},
+  { name:'بحران اقتصادی', icon:'📉', type:'bad', apply(g){
+    ITEMS.forEach(i=>g.prices[i.id]=Math.max(18,Math.round(g.prices[i.id]*0.80)));
+    return 'بحران اقتصادی! ۲۰٪ کاهش قیمت!';
+  }},
+  { name:'مشتری خیّر', icon:'💸', type:'good', apply(g){
+    ITEMS.forEach(i=>g.prices[i.id]=Math.min(350,Math.round(g.prices[i.id]*1.5)));
+    return 'مشتری خیّر آمد! ۵۰٪ افزایش قیمت!';
+  }},
+  { name:'خبر خوب', icon:'📰', type:'good', apply(g){
+    ITEMS.forEach(i=>g.prices[i.id]=Math.min(350,Math.round(g.prices[i.id]*1.25)));
+    return 'خبر خوب اقتصادی! ۲۵٪ افزایش قیمت!';
+  }},
+  { name:'هدیه غافلگیرکننده', icon:'🎁', type:'good', apply(g){
+    g.money+=200;
+    return 'هدیه غافلگیرکننده! +۲۰۰ تومان!';
+  }},
+  { name:'دزدکی زدنت', icon:'🦹', type:'bad', apply(g){
+    let s=Math.min(g.money,50); g.money-=s;
+    return `دزد! ${P(s)} تومان دزدیده شد!`;
+  }},
+  { name:'جشنواره خرید', icon:'🎉', type:'info', apply(g){
+    g.festivalActive=true;
+    return 'جشنواره خرید! اولین خرید روز ۵۰٪ تخفیف!';
+  }},
+  { name:'شانس آوردی', icon:'🍀', type:'good', apply(g){
+    let item=ITEMS[rnd(0,ITEMS.length-1)];
+    let w=g.warehouse.find(x=>x.id===item.id);
+    let cap=g.warehouse.reduce((s,x)=>s+x.qty,0);
+    let mode=MODES[g.mode];
+    if(cap<mode.cap && !(item.isCarpet && w.qty>=5)){
+      let pr=g.prices[item.id];
+      let prevT=w.qty*w.avgBuy;
+      w.qty++;
+      w.avgBuy=Math.round((prevT+pr)/(w.qty));
+      return `شانس! یک ${item.name} مجانی به انبارت اضافه شد!`;
+    }
+    g.money+=50;
+    return 'شانس! +۵۰ تومان پیدا کردی!';
+  }},
+];
+
+// =========================================================
+// NEXT DAY
+// =========================================================
+// =========================================================
+// NEXT DAY
+// =========================================================
+async function nextDay() {
+  const mode = MODES[G.mode];
+
+  if(!G.realTradedToday) {
+    document.getElementById('nextDayBtn').classList.add('warning');
+    setTimeout(()=>document.getElementById('nextDayBtn').classList.remove('warning'),600);
+    toast('⚠️ باید حداقل یه معامله سودده انجام بدی!', 'bad', 3000);
+    return;
+  }
+
+  if(G._onlineMatchId) {
+    await nextDayOnline();
+  } else {
+    nextDayLocal();
+  }
+}
+
+// =========================================================
+// NEXT DAY — حالت آنلاین واقعی (با Edge Function، atomic)
+// =========================================================
+let onlineWaitInterval = null;
+
+async function nextDayOnline() {
+  const mode = MODES[G.mode];
+
+  // آماده‌سازی وضعیت فعلی پلیر برای ارسال به سرور
+  const playerState = {
+    money: G.money, startMoney: G.startMoney, debt: G.debt, internet: G.internet,
+    warehouse: G.warehouse, darkWarehouse: G.darkWarehouse,
+    tradedToday: false, realTradedToday: false, negUsedToday: false,
+    negBlockedItems: {}, festivalActive:false, festivalUsed:false,
+    _dayPurchases: G.demandTracker || {},
+  };
+
+  document.getElementById('nextDayBtn').disabled = true;
+  document.getElementById('nextDayBtn').textContent = '⏳ در حال هماهنگی...';
+
+  const { ok, data } = await callAuthFunction('match-next-day', {
+    matchId: G._onlineMatchId,
+    playerKey: G._playerKey,
+    playerState,
+    action: 'ready',
+  });
+
+  if(!ok) {
+    toast('❌ خطا در هماهنگی با سرور: ' + (data.error||''), 'bad');
+    document.getElementById('nextDayBtn').disabled = false;
+    document.getElementById('nextDayBtn').textContent = '⏭ روز بعد';
+    return;
+  }
+
+  if(data.advanced) {
+    applyOnlineDayAdvance(data.gameState);
+  } else if(data.waitingForOpponent) {
+    showWaitingForOpponent(data.secondsLeft);
+  } else {
+    // حالت غیرمنتظره — نه پیش رفت نه منتظریم. یه بار دیگه چک کن (fallback ایمن)
+    setTimeout(async () => {
+      const retry = await callAuthFunction('match-next-day', {
+        matchId: G._onlineMatchId, playerKey: G._playerKey, playerState: null, action: 'check',
+      });
+      if(retry.ok && retry.data.advanced) {
+        applyOnlineDayAdvance(retry.data.gameState);
+      } else {
+        document.getElementById('nextDayBtn').disabled = false;
+        document.getElementById('nextDayBtn').textContent = '⏭ روز بعد';
+        toast('⚠️ مشکلی در هماهنگی پیش اومد، دوباره دکمه رو بزن', 'bad', 3000);
+      }
+    }, 1000);
+  }
+}
+
+function showWaitingForOpponent(secondsLeft) {
+  document.getElementById('nextDayBtn').textContent = `⏳ منتظر حریف... (${secondsLeft}s)`;
+  toast('⏳ منتظر حریف هستیم — حداکثر ۶۰ ثانیه', 'info', 2000);
+
+  if(onlineWaitInterval) clearInterval(onlineWaitInterval);
+  onlineWaitInterval = setInterval(async () => {
+    const { ok, data } = await callAuthFunction('match-next-day', {
+      matchId: G._onlineMatchId,
+      playerKey: G._playerKey,
+      playerState: null, // فقط چک کن، چیزی عوض نکن
+      action: 'check',
+    });
+
+    if(!ok) return;
+
+    if(data.advanced) {
+      clearInterval(onlineWaitInterval);
+      onlineWaitInterval = null;
+      applyOnlineDayAdvance(data.gameState);
+    } else if(data.waitingForOpponent && data.secondsLeft != null) {
+      document.getElementById('nextDayBtn').textContent = `⏳ منتظر حریف... (${data.secondsLeft}s)`;
+      if(data.secondsLeft <= 0) {
+        // سرور باید خودش advance کرده باشه، یه بار دیگه با ready صدا بزن تا finalize شه
+        clearInterval(onlineWaitInterval);
+        onlineWaitInterval = null;
+        nextDayOnline();
+      }
+    }
+  }, 2000);
+}
+
+function applyOnlineDayAdvance(gs) {
+  if(onlineWaitInterval) { clearInterval(onlineWaitInterval); onlineWaitInterval = null; }
+
+  const mode = MODES[G.mode];
+
+  // اعمال هزینه انبارداری، بازرس، و رویداد تصادفی — فقط الان که واقعاً روز پیش رفته
+  let sc = calcStorageCost();
+  if(sc > 0) {
+    if(G.money >= sc) G.money -= sc;
+    else { G.debt += sc - G.money; G.money = 0; }
+    G.events.push(`🏭 هزینه انبارداری: ${P(sc)}ت کسر شد`);
+  }
+
+  let darkTotal = G.darkWarehouse.reduce((s,w)=>s+w.qty,0);
+  if(darkTotal > 0 && Math.random() < mode.inspectChance) {
+    let fine = mode.fine;
+    let seized = [];
+    G.darkWarehouse.forEach(w => {
+      if(w.qty > 0) { seized.push(`${P(w.qty)} ${nameOf(w.id)}`); w.qty=0; w.avgBuy=0; w.lockDays=0; }
+    });
+    if(G.money >= fine) G.money -= fine;
+    else { G.debt += fine - G.money; G.money = 0; }
+    G.events.push(`🚔 بازرس آمد! جریمه ${P(fine)}ت${seized.length?' + مصادره: '+seized.join('، '):''}`);
+  }
+
+  if(Math.random() < 0.70) {
+    let ev = EVENTS_LIST[rnd(0, EVENTS_LIST.length-1)];
+    let result = ev.apply(G);
+    G.events.push(`🎲 ${result}`);
+  }
+
+  G.darkWarehouse.forEach(w => { if(w.lockDays>0) w.lockDays--; });
+
+  // آپدیت از وضعیت سرور (قیمت‌های مشترک)
+  G.day = gs.day;
+  G.prices = gs.prices;
+  G.darkPrices = gs.darkPrices;
+  G.priceHistory = gs.priceHistory;
+  G.demandTracker = {};
+  G.tradedToday = false;
+  G.realTradedToday = false;
+  G.negUsedToday = false;
+  G.boughtToday = {};
+  G.browserTabsVisited = {};
+  G.negBlockedItems = {};
+  G.warehouse.forEach(w => { w.lockedQty = 0; });
+
+  document.getElementById('nextDayBtn').disabled = false;
+  document.getElementById('nextDayBtn').textContent = '⏭ روز بعد';
+
+  if(G.debt > 200 && G.money <= 0) {
+    renderAll();
+    setTimeout(()=>endGame(false, 'بدهی بیش از ۲۰۰ت و پول صفر!'), 300);
+    return;
+  }
+  if(G.day > mode.days) {
+    renderAll();
+    setTimeout(()=>endGameOnline(), 300);
+    return;
+  }
+  let profit = calcProfit();
+  if(profit >= mode.goal) {
+    renderAll();
+    setTimeout(()=>endGameOnline(), 300);
+    return;
+  }
+
+  renderAll();
+  toast(`📅 روز ${P(G.day)} شروع شد`, 'info', 1400);
+}
+
+// پایان بازی آنلاین — هر دو پلیر باید روی سرور این رو ثبت کنن
+async function endGameOnline() {
+  const { data: match } = await sb.from('matches').select('*').eq('id', G._onlineMatchId).single();
+  if(!match) return;
+  const gs = match.game_state;
+  const myProfit = calcProfit();
+  const opState = gs[G._opponentKey];
+  let opInvVal = 0;
+  (opState.warehouse||[]).forEach(w => opInvVal += w.qty * (G.prices[w.id]||0));
+  const opProfit = (opState.money + opInvVal) - opState.startMoney - (opState.debt||0);
+
+  if(match.status !== 'finished') {
+    await sb.from('matches').update({ status: 'finished' }).eq('id', G._onlineMatchId);
+  }
+
+  endGame(myProfit > opProfit, myProfit <= opProfit ? 'حریف جلوتر بود!' : '');
+}
+
+// =========================================================
+// NEXT DAY — حالت محلی (آفلاین / با بات) — بدون تغییر منطق قبلی
+// =========================================================
+function nextDayLocal() {
+  const mode = MODES[G.mode];
+
+  // 1. Storage cost
+  let sc = calcStorageCost();
+  if(sc > 0) {
+    if(G.money >= sc) G.money -= sc;
+    else { G.debt += sc - G.money; G.money = 0; }
+    G.events.push(`🏭 هزینه انبارداری: ${P(sc)}ت کسر شد`);
+  }
+
+  // 2. Inspector
+  let darkTotal = G.darkWarehouse.reduce((s,w)=>s+w.qty,0);
+  if(darkTotal > 0 && Math.random() < mode.inspectChance) {
+    let fine = mode.fine;
+    let seized = [];
+    G.darkWarehouse.forEach(w => {
+      if(w.qty > 0) {
+        seized.push(`${P(w.qty)} ${nameOf(w.id)}`);
+        w.qty = 0; w.avgBuy = 0; w.lockDays = 0;
+      }
+    });
+    if(G.money >= fine) G.money -= fine;
+    else { G.debt += fine - G.money; G.money = 0; }
+    let msg = `جریمه ${P(fine)}ت${seized.length?' + مصادره: '+seized.join('، '):''}`;
+    G.events.push(`🚔 بازرس آمد! ${msg}`);
+    let banner = document.getElementById('inspectorBanner');
+    document.getElementById('inspectorMsg').textContent = msg;
+    banner.classList.remove('hidden');
+    setTimeout(()=>banner.classList.add('hidden'), 6000);
+  }
+
+  // 3. Random event (70% chance)
+  G.currentEvent = null;
+  G.festivalActive = false;
+  G.festivalUsed = false;
+  if(Math.random() < 0.70) {
+    let ev = EVENTS_LIST[rnd(0, EVENTS_LIST.length-1)];
+    let result = ev.apply(G);
+    G.events.push(`🎲 ${result}`);
+    G.currentEvent = result;
+    let evBanner = document.getElementById('eventBanner');
+    document.getElementById('eventMsg').textContent = result;
+    evBanner.classList.remove('hidden');
+    setTimeout(()=>evBanner.classList.add('hidden'), 5000);
+  }
+
+  // 4. Unlock dark items
+  G.darkWarehouse.forEach(w => { if(w.lockDays>0) w.lockDays--; });
+
+  // 5. Advance day
+  G.day++;
+
+  // 6. جمع تقاضای بات‌ها به demandTracker
+  if(isOnline) {
+    bots.forEach(bot => {
+      if(bot._dayPurchases) {
+        Object.entries(bot._dayPurchases).forEach(([id, qty]) => {
+          if(!G.demandTracker) G.demandTracker = {};
+          G.demandTracker[id] = (G.demandTracker[id]||0) + qty;
+        });
+      }
+    });
+  }
+
+  // 7. قیمت‌های جدید با لحاظ کردن تقاضای دیروز
+  let newPrices = genPrices(G.prices, G.demandTracker || {});
+  G.prices = newPrices;
+  G.darkPrices = genDarkPrices(newPrices);
+  G.demandTracker = {};
+
+  // 7. Update history
+  ITEMS.forEach(item => {
+    if(!G.priceHistory[item.id]) G.priceHistory[item.id]=[];
+    G.priceHistory[item.id].push(newPrices[item.id]);
+    if(G.priceHistory[item.id].length>10) G.priceHistory[item.id].shift();
+  });
+
+  // 8. Net prices for pro
+  if(G.mode==='pro') G.netPrices = genNetPrices('pro');
+
+  // 9. اجرای بات‌ها و رنکینگ روزانه
+  if(isOnline && bots.length > 0) {
+    bots.forEach(bot => runBotDay(bot));
+    let rankResult = applyDailyRanking();
+    if(rankResult) {
+      rankResult.msgs.forEach(m => G.events.push(m));
+      let banner = document.createElement('div');
+      banner.className = 'rank-banner';
+      banner.innerHTML = '🏆 <strong>نتیجه رقابت امروز:</strong><br>' + rankResult.msgs.join('<br>');
+      let inspBanner = document.getElementById('inspectorBanner');
+      inspBanner.parentNode.insertBefore(banner, inspBanner);
+      setTimeout(() => banner.remove(), 6000);
+    }
+  }
+
+  // 10. Reset daily flags
+  G.tradedToday = false;
+  G.realTradedToday = false;
+  G.negUsedToday = false;
+  G.boughtToday = {};
+  G.browserTabsVisited = {};
+  G.negBlockedItems = {};
+  G.warehouse.forEach(w => { w.lockedQty = 0; });
+
+  // 11. Debt check
+  if(G.debt > 200 && G.money <= 0) {
+    renderAll();
+    setTimeout(()=>endGame(false, 'بدهی بیش از ۲۰۰ت و پول صفر!'), 300);
+    return;
+  }
+
+  // 12. Day end check
+  if(G.day > mode.days) {
+    renderAll();
+    setTimeout(()=>endGame(false, 'زمان تموم شد!'), 300);
+    return;
+  }
+
+  // 13. Win check
+  let profit = calcProfit();
+  if(profit >= mode.goal) {
+    renderAll();
+    setTimeout(()=>endGame(true), 300);
+    return;
+  }
+
+  autoSave();
+  renderAll();
+
+  // Daily tip
+  if(Math.random() < 0.4) {
+    let tip = TIPS[rnd(0,TIPS.length-1)];
+    document.getElementById('tipText').textContent = tip;
+    document.getElementById('tipOverlay').classList.remove('hidden');
+  }
+
+  toast(`📅 روز ${P(G.day)} شروع شد`, 'info', 1400);
+
+  if(tutActive && tutStep===2) advanceTutorial('nextday');
+}
+
+// =========================================================
+// BOT ENGINE
+// =========================================================
+function botCalcProfit(bot) {
+  let invVal = 0;
+  bot.warehouse.forEach(w => invVal += w.qty * (G.prices[w.id]||0));
+  bot.darkWarehouse.forEach(w => invVal += w.qty * (G.prices[w.id]||0));
+  return (bot.money + invVal) - bot.startMoney - bot.debt;
+}
+
+function botStorageCost(bot) {
+  const mode = MODES[G.mode];
+  let n = bot.warehouse.reduce((s,w)=>s+w.qty,0) * mode.storageCost[0];
+  let d = bot.darkWarehouse.reduce((s,w)=>s+w.qty,0) * mode.storageCost[1];
+  return n + d;
+}
+
+function botNormalCap(bot) { return bot.warehouse.reduce((s,w)=>s+w.qty,0); }
+function botDarkCap(bot)   { return bot.darkWarehouse.reduce((s,w)=>s+w.qty,0); }
+
+function runBotDay(bot) {
+  const mode = MODES[G.mode];
+  const skill = bot.skill;
+  let actions = [];
+  bot._dayPurchases = {}; // ریست خریدهای روزانه
+
+  // --- هزینه انبارداری ---
+  let sc = botStorageCost(bot);
+  if(sc > 0) {
+    if(bot.money >= sc) bot.money -= sc;
+    else { bot.debt += sc - bot.money; bot.money = 0; }
+  }
+
+  // --- بازرس برای بات ---
+  let darkTotal = bot.darkWarehouse.reduce((s,w)=>s+w.qty,0);
+  if(darkTotal > 0 && Math.random() < mode.inspectChance) {
+    bot.darkWarehouse.forEach(w => { w.qty = 0; w.avgBuy = 0; w.lockDays = 0; });
+    let fine = mode.fine;
+    if(bot.money >= fine) bot.money -= fine;
+    else { bot.debt += fine - bot.money; bot.money = 0; }
+    actions.push('بازرس آمد! جریمه شد 🚔');
+  }
+
+  // --- آزاد کردن قفل دارک ---
+  bot.darkWarehouse.forEach(w => { if(w.lockDays > 0) w.lockDays--; });
+
+  // --- استراتژی بر اساس مهارت ---
+  if(skill === 'easy') {
+    botStrategyEasy(bot, actions);
+  } else if(skill === 'medium') {
+    botStrategyMedium(bot, actions);
+  } else if(skill === 'hard') {
+    botStrategyHard(bot, actions);
+  } else if(skill === 'pro') {
+    botStrategyPro(bot, actions);
+  }
+
+  bot.lastAction = actions.length > 0 ? actions[actions.length-1] : 'منتظر فرصت...';
+  // ذخیره تاریخچه اقدامات (حداکثر ۳۰ مورد)
+  if(!bot.actionHistory) bot.actionHistory = [];
+  actions.forEach(a => bot.actionHistory.push({ day: G.day, action: a }));
+  if(bot.actionHistory.length > 30) bot.actionHistory = bot.actionHistory.slice(-30);
+}
+
+// کمک: ثبت خرید بات با ردیابی تقاضا
+function botBuy(bot, wArr, item, qty, price, isDark, mode, actions, label) {
+  let w = wArr.find(x=>x.id===item.id);
+  let prev = w.qty * w.avgBuy;
+  w.qty += qty;
+  w.avgBuy = Math.round((prev + price*qty) / w.qty);
+  if(isDark) { w.lockDays = mode.darkLock; bot.internet = Math.max(0, bot.internet-100); }
+  bot.money -= price * qty;
+  // ردیابی خرید
+  if(!bot._dayPurchases) bot._dayPurchases = {};
+  bot._dayPurchases[item.id] = (bot._dayPurchases[item.id]||0) + qty;
+  actions.push(`${label} ${qty} ${nameOf(item.id)}`);
+}
+
+// آسون: خرید ارزون‌ترین کالا، فروش موجودی اگه قیمت بالاست
+function botStrategyEasy(bot, actions) {
+  const mode = MODES[G.mode];
+  bot.warehouse.forEach(w => {
+    if(w.qty > 0 && G.prices[w.id] > w.avgBuy * 1.1) {
+      let earn = G.prices[w.id] * w.qty;
+      if(bot.debt > 0) { let p=Math.min(bot.debt,earn); bot.debt-=p; earn-=p; }
+      bot.money += earn;
+      actions.push(`فروش ${w.qty} ${nameOf(w.id)} به ${P(G.prices[w.id])}ت`);
+      w.qty = 0; w.avgBuy = 0;
+    }
+  });
+  let cheapest = ITEMS.reduce((a,b) => G.prices[a.id] < G.prices[b.id] ? a : b);
+  let buyQty = Math.floor(bot.money * 0.6 / G.prices[cheapest.id]);
+  buyQty = Math.min(buyQty, mode.cap - botNormalCap(bot));
+  if(cheapest.isCarpet) buyQty = Math.min(buyQty, 5 - (bot.warehouse.find(w=>w.id===cheapest.id)?.qty||0));
+  if(buyQty > 0 && bot.money >= G.prices[cheapest.id] * buyQty) {
+    botBuy(bot, bot.warehouse, cheapest, buyQty, G.prices[cheapest.id], false, mode, actions, 'خرید');
+  }
+}
+
+// متوسط: تحلیل روند + دارک وب گاهی
+function botStrategyMedium(bot, actions) {
+  const mode = MODES[G.mode];
+  // فروش با سود ۱۵٪+
+  bot.warehouse.forEach(w => {
+    if(w.qty > 0 && G.prices[w.id] > w.avgBuy * 1.15) {
+      let earn = G.prices[w.id] * w.qty;
+      if(bot.debt > 0) { let p=Math.min(bot.debt,earn); bot.debt-=p; earn-=p; }
+      bot.money += earn;
+      actions.push(`فروش سودده ${w.qty} ${nameOf(w.id)}`);
+      w.qty = 0; w.avgBuy = 0;
+    }
+  });
+  // فروش دارک اگه باز شده
+  bot.darkWarehouse.forEach(w => {
+    if(w.qty > 0 && w.lockDays <= 0) {
+      let earn = G.prices[w.id] * w.qty;
+      if(bot.debt > 0) { let p=Math.min(bot.debt,earn); bot.debt-=p; earn-=p; }
+      bot.money += earn;
+      actions.push(`فروش دارک ${w.qty} ${nameOf(w.id)}`);
+      w.qty = 0; w.avgBuy = 0;
+    }
+  });
+  let bestItem = getBestBuyItem();
+  if(bestItem) {
+    let useDark = Math.random() < 0.4 && bot.internet > 0;
+    let price = useDark ? G.darkPrices[bestItem.id] : G.prices[bestItem.id];
+    let wArr = useDark ? bot.darkWarehouse : bot.warehouse;
+    let buyQty = Math.floor(bot.money * 0.5 / price);
+    buyQty = Math.min(buyQty, mode.cap - (useDark ? botDarkCap(bot) : botNormalCap(bot)));
+    if(bestItem.isCarpet) buyQty = Math.min(buyQty, 5);
+    if(buyQty > 0 && bot.money >= price * buyQty) {
+      botBuy(bot, wArr, bestItem, buyQty, price, useDark, mode, actions, useDark?'خرید دارک':'خرید');
+    }
+  }
+  if(bot.money > 150 && bot.internet < 200 && Math.random() < 0.3) {
+    bot.money -= 35; bot.internet += 2048;
+  }
+}
+
+// سخت: تحلیل عمیق‌تر، دارک وب بیشتر، مذاکره شبیه‌سازی‌شده
+function botStrategyHard(bot, actions) {
+  const mode = MODES[G.mode];
+  // فروش با مذاکره شبیه‌سازی (۱۰٪ شانس قیمت بهتر)
+  bot.warehouse.forEach(w => {
+    if(w.qty > 0 && G.prices[w.id] > w.avgBuy * 1.1) {
+      let sellPrice = G.prices[w.id];
+      if(Math.random() < 0.5) sellPrice = Math.round(sellPrice * 1.08); // مذاکره موفق
+      let earn = sellPrice * w.qty;
+      if(bot.debt > 0) { let p=Math.min(bot.debt,earn); bot.debt-=p; earn-=p; }
+      bot.money += earn;
+      actions.push(`فروش هوشمند ${w.qty} ${nameOf(w.id)} به ${P(sellPrice)}ت`);
+      w.qty = 0; w.avgBuy = 0;
+    }
+  });
+  bot.darkWarehouse.forEach(w => {
+    if(w.qty > 0 && w.lockDays <= 0) {
+      let earn = G.prices[w.id] * w.qty;
+      if(bot.debt > 0) { let p=Math.min(bot.debt,earn); bot.debt-=p; earn-=p; }
+      bot.money += earn;
+      actions.push(`فروش دارک ${w.qty} ${nameOf(w.id)}`);
+      w.qty = 0; w.avgBuy = 0;
+    }
+  });
+  let bestItem2 = getBestBuyItem();
+  if(bestItem2) {
+    let useDark = Math.random() < 0.6 && bot.internet > 0;
+    let price = useDark ? G.darkPrices[bestItem2.id] : G.prices[bestItem2.id];
+    let wArr = useDark ? bot.darkWarehouse : bot.warehouse;
+    let buyQty = Math.floor(bot.money * 0.65 / price);
+    buyQty = Math.min(buyQty, mode.cap - (useDark ? botDarkCap(bot) : botNormalCap(bot)));
+    if(bestItem2.isCarpet) buyQty = Math.min(buyQty, 5);
+    if(buyQty > 0 && bot.money >= price * buyQty) {
+      botBuy(bot, wArr, bestItem2, buyQty, price, useDark, mode, actions, useDark?'خرید تحلیلی دارک':'خرید تحلیلی');
+    }
+  }
+  if(bot.money > 100 && bot.internet < 300 && Math.random() < 0.5) {
+    bot.money -= 35; bot.internet += 2048;
+  }
+}
+
+// پرو: استراتژی حداکثری
+function botStrategyPro(bot, actions) {
+  const mode = MODES[G.mode];
+  // فروش همه با سود ۸٪+
+  bot.warehouse.forEach(w => {
+    if(w.qty > 0 && G.prices[w.id] > w.avgBuy * 1.08) {
+      let sellPrice = Math.round(G.prices[w.id] * (Math.random() < 0.6 ? 1.12 : 1.0));
+      let earn = sellPrice * w.qty;
+      if(bot.debt > 0) { let p=Math.min(bot.debt,earn); bot.debt-=p; earn-=p; }
+      bot.money += earn;
+      actions.push(`فروش پرو ${w.qty} ${nameOf(w.id)} @${P(sellPrice)}ت`);
+      w.qty = 0; w.avgBuy = 0;
+    }
+  });
+  bot.darkWarehouse.forEach(w => {
+    if(w.qty > 0 && w.lockDays <= 0) {
+      let earn = G.prices[w.id] * w.qty;
+      if(bot.debt > 0) { let p=Math.min(bot.debt,earn); bot.debt-=p; earn-=p; }
+      bot.money += earn;
+      actions.push(`فروش دارک پرو ${w.qty} ${nameOf(w.id)}`);
+      w.qty = 0; w.avgBuy = 0;
+    }
+  });
+  let sorted = ITEMS.slice().sort((a,b) => getPriceTrend(b.id) - getPriceTrend(a.id));
+  let budget = bot.money * 0.8;
+  sorted.slice(0,2).forEach(item => {
+    let useDark = bot.internet > 100 && Math.random() < 0.7;
+    let price = useDark ? G.darkPrices[item.id] : G.prices[item.id];
+    let wArr = useDark ? bot.darkWarehouse : bot.warehouse;
+    let buyQty = Math.floor((budget * 0.5) / price);
+    buyQty = Math.min(buyQty, mode.cap - (useDark ? botDarkCap(bot) : botNormalCap(bot)));
+    if(item.isCarpet) buyQty = Math.min(buyQty, 5);
+    if(buyQty > 0 && bot.money >= price * buyQty) {
+      botBuy(bot, wArr, item, buyQty, price, useDark, mode, actions, useDark?'پورتفولیو دارک':'پورتفولیو');
+    }
+  });
+  if(bot.money > 80 && bot.internet < 500) {
+    bot.money -= 35; bot.internet += 2048;
+  }
+}
+
+// کمک: بهترین کالا برای خرید بر اساس روند
+function getBestBuyItem() {
+  let best = null, bestScore = -Infinity;
+  ITEMS.forEach(item => {
+    let trend = getPriceTrend(item.id);
+    let price = G.prices[item.id];
+    let score = trend - (price / 100); // روند مثبت + ارزون‌تر = بهتر
+    if(score > bestScore) { bestScore = score; best = item; }
+  });
+  return best;
+}
+
+// کمک: روند قیمت (عدد مثبت = صعودی، منفی = نزولی)
+function getPriceTrend(itemId) {
+  let hist = (G.priceHistory[itemId]||[]).slice(-5);
+  if(hist.length < 2) return 0;
+  return ((hist[hist.length-1] - hist[0]) / hist[0]) * 100;
+}
+
+// =========================================================
+// RANKING SYSTEM
+// =========================================================
+function calcAllProfits() {
+  let all = [{ name:'شما', emoji:'🧑‍💼', profit: calcProfit(), isPlayer: true }];
+  bots.forEach(b => all.push({ name:b.name, emoji:b.emoji, profit:botCalcProfit(b), isPlayer:false }));
+  all.sort((a,b) => b.profit - a.profit);
+  return all;
+}
+
+function applyDailyRanking() {
+  if(!isOnline || bots.length === 0) return null;
+  let mode = MODES[G.mode];
+  let rankings = calcAllProfits();
+  let total = rankings.length;
+  let msgs = [];
+
+  rankings.forEach((r, i) => {
+    // محاسبه جایزه/جریمه بر اساس رنک و تعداد کل بازیکنان
+    let reward = 0;
+    if(i === 0) reward = 300;
+    else if(i === 1 && total > 2) reward = 200;
+    else if(i === total - 1 && mode.label !== 'آسون') reward = -100;
+
+    if(r.isPlayer) {
+      if(reward > 0) {
+        G.money += reward;
+        msgs.push(`${i===0?'🥇':'🥈'} نفر ${P(i+1)} شدی! +${P(reward)}ت جایزه`);
+      } else if(reward < 0) {
+        if(G.money >= Math.abs(reward)) G.money += reward;
+        else { G.debt += Math.abs(reward) - G.money; G.money = 0; }
+        msgs.push(`💀 نفر آخر شدی! ${P(Math.abs(reward))}ت کسر شد`);
+      } else {
+        msgs.push(`🥈 نفر ${P(i+1)} شدی — بدون جایزه`);
+      }
+    } else {
+      let bot = bots.find(b => b.name === r.name);
+      if(bot) {
+        if(reward > 0) bot.money += reward;
+        else if(reward < 0) {
+          if(bot.money >= Math.abs(reward)) bot.money += reward;
+          else { bot.debt += Math.abs(reward) - bot.money; bot.money = 0; }
+        }
+      }
+    }
+  });
+  return { rankings, msgs };
+}
+
+function renderRanking() {
+  if(!isOnline || bots.length === 0) return;
+  let el = document.getElementById('rankingPanel');
+  let rankings = calcAllProfits();
+  const medals = ['🥇','🥈','🥉','😢'];
+  el.innerHTML = rankings.map((r,i) => `
+    <div class="bot-card rank-${i+1}" style="${r.isPlayer?'border-color:var(--accent2);background:rgba(200,148,26,0.08);':''} cursor:pointer;"
+      ${!r.isPlayer ? `onclick="showBotDetail('${r.name}')"` : ''}>
+      <div class="bot-name">
+        <span>${medals[Math.min(i,3)]}</span>
+        <span>${r.emoji}</span>
+        <span style="${r.isPlayer?'color:var(--accent2);':''}">${r.name}${r.isPlayer?' (شما)':''}</span>
+        ${!r.isPlayer ? '<span style="font-size:0.65rem; color:var(--text3); margin-right:auto;">👆 جزئیات</span>' : ''}
+      </div>
+      <div class="bot-profit ${r.profit>=0?'pos':'neg'}">${P(r.profit)}ت سود</div>
+      ${!r.isPlayer ? `<div style="font-size:0.68rem; color:var(--text3); margin-top:2px;">${bots.find(b=>b.name===r.name)?.lastAction||'...'}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function showBotDetail(botName) {
+  let bot = bots.find(b => b.name === botName);
+  if(!bot) return;
+
+  const skillLabels = { easy:'مبتدی', medium:'متوسط', hard:'حرفه‌ای', pro:'استاد' };
+  let profit = botCalcProfit(bot);
+  let nQty = bot.warehouse.reduce((s,w)=>s+w.qty,0);
+  let dQty = bot.darkWarehouse.reduce((s,w)=>s+w.qty,0);
+
+  document.getElementById('bdEmoji').textContent = bot.emoji;
+  document.getElementById('bdName').textContent = bot.name;
+  document.getElementById('bdSkill').textContent = 'مهارت: ' + (skillLabels[bot.skill]||bot.skill);
+  document.getElementById('bdMoney').textContent = P(bot.money)+'ت';
+  let profEl = document.getElementById('bdProfit');
+  profEl.textContent = P(profit)+'ت';
+  profEl.className = 'fw-800 ' + (profit >= 0 ? 'c-green' : 'c-red');
+
+  // انبار معمولی
+  let normalItems = bot.warehouse.filter(w=>w.qty>0).map(w=>`${iconOf(w.id)}${P(w.qty)}`).join(' ');
+  document.getElementById('bdNormal').textContent = normalItems || 'خالی';
+
+  // زیرزمین
+  let darkItems = bot.darkWarehouse.filter(w=>w.qty>0)
+    .map(w=>`${iconOf(w.id)}${P(w.qty)}${w.lockDays>0?'🔒'+P(w.lockDays):''}`).join(' ');
+  document.getElementById('bdDark').textContent = darkItems || 'خالی';
+
+  document.getElementById('bdNet').textContent = P(Math.round(bot.internet/1024*10)/10)+' GB';
+
+  let debtRow = document.getElementById('bdDebtRow');
+  if(bot.debt > 0) {
+    debtRow.style.display = 'flex';
+    document.getElementById('bdDebt').textContent = P(bot.debt)+'ت';
+  } else {
+    debtRow.style.display = 'none';
+  }
+
+  // لاگ اقدامات
+  let log = document.getElementById('bdLog');
+  let actions = bot.actionHistory || [];
+  if(actions.length === 0) {
+    log.innerHTML = '<div class="bot-log-item c-text3">هنوز اقدامی ثبت نشده</div>';
+  } else {
+    log.innerHTML = actions.slice().reverse().slice(0,15)
+      .map(a => `<div class="bot-log-item">روز ${P(a.day)}: ${a.action}</div>`).join('');
+  }
+
+  document.getElementById('botDetailOverlay').classList.remove('hidden');
+}
+
+function closeBotDetail(e) {
+  if(e.target.id === 'botDetailOverlay') {
+    document.getElementById('botDetailOverlay').classList.add('hidden');
+  }
+}
+
+// =========================================================
+// END GAME
+// =========================================================
+function endGame(won, reason='') {
+  const mode = MODES[G.mode];
+  let profit = calcProfit();
+
+  // پاک کردن interval های آنلاین در صورت وجود
+  if(liveMatchPollInterval) { clearInterval(liveMatchPollInterval); liveMatchPollInterval = null; }
+  if(onlineWaitInterval) { clearInterval(onlineWaitInterval); onlineWaitInterval = null; }
+  clearMatchSubscription();
+
+  document.getElementById('resIcon').textContent = won ? '🏆' : '💀';
+  let titleEl = document.getElementById('resTitle');
+  titleEl.textContent = won ? 'برنده شدی!' : 'باختی!';
+  titleEl.className = won ? 'result-win' : 'result-lose';
+  document.getElementById('resMsg').textContent = won ? 'آفرین! به هدف رسیدی!' : reason;
+  document.getElementById('resStats').innerHTML = `
+    <div>مود: <strong>${mode.label}</strong></div>
+    <div>روز: <strong>${P(G.day-1)} از ${P(mode.days)}</strong></div>
+    <div>پول نقد: <strong>${P(G.money)}ت</strong></div>
+    <div>سود خالص: <strong style="color:${profit>=0?'var(--green2)':'var(--red2)'};">${P(profit)}ت</strong></div>
+    <div>هدف: <strong>${P(mode.goal)}ت</strong></div>
+    <div>بدهی: <strong style="color:var(--red2);">${P(G.debt)}ت</strong></div>
+  `;
+
+  localStorage.removeItem(SAVE_KEY);
+  document.getElementById('gameOverOverlay').classList.remove('hidden');
+}
+
+// =========================================================
+// TUTORIAL
+// =========================================================
+function startTutorial() {
+  tutActive = true;
+  tutStep = 0;
+  showTutStep();
+}
+
+function showTutStep() {
+  let el = document.getElementById('tutTooltip');
+  const steps = [
+    'مرحله ۱: اول یه کالا بخر! دکمه سبز «خرید» رو بزن 👆',
+    'مرحله ۲: حالا همون کالا رو بفروش! دکمه قرمز «فروش» رو بزن 👆',
+    'مرحله ۳: دکمه «روز بعد» رو بزن تا به روز بعدی بری! 👆',
+  ];
+  if(tutStep < steps.length) {
+    el.textContent = steps[tutStep];
+    el.classList.remove('hidden');
+  } else {
+    el.classList.add('hidden');
+    tutActive = false;
+    localStorage.setItem('bazaar_tut_done','1');
+    toast('🎓 تور آموزشی تموم شد! موفق باشی!', 'good', 3000);
+  }
+}
+
+function advanceTutorial(action) {
+  if(tutStep===0 && action==='buy') tutStep=1;
+  else if(tutStep===1 && action==='sell') tutStep=2;
+  else if(tutStep===2 && action==='nextday') tutStep=3;
+  else return;
+  showTutStep();
+}
+
+// =========================================================
+// HELP
+// =========================================================
+function showHelp() {
+  document.getElementById('helpOverlay').classList.remove('hidden');
+}
+
+// =========================================================
+// INIT
+// =========================================================
+window.onload = () => {
+  initTheme();
+  selectMode('easy');
+  selectOnlineMode('easy');
+  checkAuth();
+
+  let saved = loadSaved();
+  let savedInfo = document.getElementById('savedGameInfo');
+  if(saved && saved.day && saved.mode) {
+    savedInfo.innerHTML = `💾 بازی ذخیره: <strong>${MODES[saved.mode]?.label}</strong> — روز ${P(saved.day)} | <a href="#" onclick="startGame(loadSaved(),false); return false;" style="color:var(--accent2);">ادامه</a>`;
+  }
+};
+</script>
+</body>
+</html>
