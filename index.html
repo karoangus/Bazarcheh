@@ -2252,6 +2252,7 @@ function selectOnlineMode(mode) {
 let randomPollInterval = null;
 let mmTimerInterval = null;
 let mmStartTime = 0;
+let mmRequestToken = 0;
 
 function startMmTimer() {
   mmStartTime = Date.now();
@@ -2277,6 +2278,8 @@ function resetMmUi() {
 
 async function joinRandomMatch() {
   if(!currentUser) { toast('❌ ابتدا وارد شو', 'bad'); return; }
+  const requestToken = ++mmRequestToken;
+  const userId = currentUser.id;
 
   document.getElementById('matchmakingRandomStart').classList.add('hidden');
   document.getElementById('matchmakingWaiting').classList.remove('hidden');
@@ -2290,6 +2293,12 @@ async function joinRandomMatch() {
     username: currentProfile?.username || 'بازیکن'
   });
 
+  if(requestToken !== mmRequestToken) {
+    if(ok && data.status === 'waiting') callAuthFunction('match-join', { action:'cancel', matchId:data.matchId, userId });
+    // An already active match remains resumable from the menu.
+    if(ok && data.status === 'active') checkResumeMatches();
+    return;
+  }
   if(!ok) {
     stopMmTimer();
     resetMmUi();
@@ -2311,7 +2320,10 @@ async function joinRandomMatch() {
     stopMmTimer();
     document.getElementById('matchmakingStatus').textContent = '✅ حریف پیدا شد!';
     document.getElementById('matchmakingCount').textContent = '۲ از ۲ نفر';
-    setTimeout(() => startOnlineMatch(data.matchId, false), 900);
+    setTimeout(() => {
+      if(requestToken === mmRequestToken) startOnlineMatch(data.matchId, false);
+      else checkResumeMatches();
+    }, 900);
     return;
   }
 
@@ -2334,6 +2346,8 @@ function challengeFriend(friendId, friendUsername) {
 
 async function sendDuelInvite() {
   if(!currentUser || !pendingChallengeFriendId) return;
+  const requestToken = ++mmRequestToken;
+  const userId = currentUser.id;
 
   document.getElementById('friendDuelOverlay').classList.add('hidden');
   document.getElementById('friendWaitingOverlay').classList.remove('hidden');
@@ -2348,6 +2362,10 @@ async function sendDuelInvite() {
     mode: selectedOnlineMode
   });
 
+  if(requestToken !== mmRequestToken) {
+    if(ok && data.status === 'waiting') callAuthFunction('match-join', { action:'cancel', matchId:data.matchId, userId });
+    return;
+  }
   if(!ok) {
     stopMmTimer();
     document.getElementById('friendWaitingOverlay').classList.add('hidden');
@@ -2414,6 +2432,7 @@ function startWaitingPoll(matchId, isPlayer1, ctx) {
 }
 
 async function cancelMatchmaking() {
+  ++mmRequestToken;
   if(randomPollInterval) { clearInterval(randomPollInterval); randomPollInterval = null; }
   stopMmTimer();
   const mid = currentMatchId;
