@@ -878,60 +878,103 @@ select.auth-input { cursor: pointer; }
 }
 .online-badge .dot { width: 9px; height: 9px; background: var(--green2); border-radius: 50%; animation: pulseGreen 2s infinite; }
 
-/* ===== GAME CONTAINER ===== */
-#gameUI { display: none; min-height: 100vh; flex-direction: column; }
-#gameUI.active { display: flex; animation: fadeIn 0.35s; }
+/* ===== GAME WORKSPACE ===== */
+/* The game owns the viewport; long tabs scroll within their own panel rather
+   than pushing the whole application and its controls off-screen. */
+#gameUI { display: none; }
+#gameUI.active {
+  display: flex; flex-direction: column; position: fixed; inset: 0;
+  width: 100%; height: 100vh; height: 100dvh; min-height: 0;
+  overflow: hidden; animation: fadeIn 0.35s;
+}
+.game-header { flex: none; position: relative; top: auto; }
+.game-body {
+  width: 100%; max-width: none; margin: 0; flex: 1 1 auto; min-height: 0;
+  grid-template-columns: clamp(170px, 17vw, 232px) minmax(0, 1fr) clamp(200px, 18vw, 258px);
+  align-items: stretch; overflow: hidden;
+}
+.left-panel, .right-panel, .center-panel { min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.left-panel, .right-panel { position: static; }
+.center-panel { padding: 1px; }
+.center-panel > div > .card:last-child { margin-bottom: 0; }
+.game-footer { display: none; }
+.nav-status, .nav-label-mobile { display: none; }
 
-.center-panel { min-width: 0; }
-
-.game-footer {
-  text-align: center; font-size: 0.68rem; color: var(--text3);
-  padding: 14px; border-top: 1px solid var(--border);
-  margin-top: auto;
+@media (min-width: 901px) and (min-height: 700px) {
+  #tab-market:not(.hidden) { display: flex; flex-direction: column; min-height: 100%; gap: 14px; }
+  #tab-market .market-card { flex: 1 0 auto; display: flex; flex-direction: column; margin: 0; }
+  #tab-market .mkt-table { flex: 1; }
+  #tab-market .market-log-card { flex: 0 0 clamp(130px, 25vh, 210px); display: flex; flex-direction: column; margin: 0; min-height: 0; }
+  #tab-market .event-log { flex: 1; min-height: 0; max-height: none; }
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 1080px) {
-  .game-body { grid-template-columns: 210px minmax(0,1fr); }
-  .right-panel { grid-column: 1 / -1; position: static; }
-}
-@media (max-width: 820px) {
-  .game-body { grid-template-columns: 1fr; padding: 12px 12px 90px; }
-  .left-panel, .right-panel { position: static; }
+/* Small screens get a compact, fixed dock. Status remains available as a tab,
+   including the opponent panel and the walkover action in online matches. */
+@media (max-width: 900px) {
+  .game-header { padding: max(8px, env(safe-area-inset-top)) 10px 8px; gap: 5px; }
+  .logo { font-size: 0.84rem; }
+  .stat-chip { padding: 4px 8px; font-size: 0.69rem; gap: 3px; }
+  .stat-chip .lbl { font-size: 0.64rem; }
+  .header-right { gap: 4px; }
+  .header-right .btn { padding: 6px 8px; }
+  .theme-toggle { width: 32px; height: 32px; }
+  .game-body {
+    display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr);
+    padding: 10px 10px calc(82px + env(safe-area-inset-bottom)); gap: 0;
+  }
   .left-panel {
-    position: fixed; bottom: 0; left: 0; right: 0; z-index: 900;
-    display: flex; gap: 6px; padding: 9px 12px calc(9px + env(safe-area-inset-bottom));
-    border-radius: 20px 20px 0 0;
-    background: var(--panel-solid);
+    position: fixed; top: auto; bottom: 0; left: 0; right: 0; z-index: 900;
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(68px, 1.2fr);
+    align-items: stretch; gap: 3px; padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    height: auto; max-height: none; overflow: visible;
+    border-radius: 18px 18px 0 0; background: var(--panel-solid);
     border: 1px solid var(--border2); border-bottom: none;
     box-shadow: 0 -8px 30px rgba(0,0,0,0.4);
-    overflow-x: auto;
   }
   .left-panel .section-lbl, .left-panel .section-sep,
   .left-panel .progress-section, .left-panel hr,
   .left-panel > div:not(.nav-item) { display: none !important; }
   .left-panel .nav-item {
-    flex-direction: column; gap: 3px; min-width: 64px;
-    margin: 0; padding: 7px 6px; font-size: 0.64rem; text-align: center;
-    border-radius: 12px; flex-shrink: 0;
+    display: flex; flex-direction: column; justify-content: center; gap: 1px;
+    min-width: 0; min-height: 58px; margin: 0; padding: 4px 1px;
+    font-size: 0.66rem; line-height: 1.3; text-align: center; border-radius: 11px;
   }
   .left-panel .nav-item.active::before { display: none; }
-  .left-panel .nav-icon { font-size: 1.25rem; }
+  .left-panel .nav-icon { font-size: 1.12rem; line-height: 1.4; }
+  .nav-label-desktop { display: none; }
+  .nav-label-mobile { display: inline; }
+  #browserNetBadge { display: none !important; }
   .left-panel .next-day-btn {
-    display: flex; min-width: 108px; align-items: center; justify-content: center;
-    padding: 8px 12px; font-size: 0.8rem; border-radius: 12px; margin: 0;
-    flex-shrink: 0; width: auto;
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; min-width: 0; min-height: 58px; max-height: 68px; padding: 5px 3px; margin: 0;
+    border-radius: 11px; font-size: 0.7rem; line-height: 1.4; text-align: center;
+    white-space: normal; overflow-wrap: anywhere;
   }
-  .game-header { padding: 8px 12px; gap: 6px; }
-  .logo { font-size: 0.88rem; }
-  .stat-chip { padding: 4px 10px; font-size: 0.7rem; }
-  .modal { padding: 22px 18px; border-radius: 20px; }
+  .right-panel { display: none; grid-area: 1 / 1; }
+  #gameUI[data-mobile-panel="status"] .center-panel { display: none; }
+  #gameUI[data-mobile-panel="status"] .right-panel { display: block; }
+  .center-panel { grid-area: 1 / 1; }
+  .modal { padding: 22px 18px; border-radius: 20px; max-height: calc(100dvh - 32px); }
+  .theme-modal, .bot-detail-modal, .tip-modal { max-height: calc(100dvh - 32px); overflow-y: auto; }
+  .tutorial-tooltip { bottom: calc(84px + env(safe-area-inset-bottom)); pointer-events: none; }
   .card { padding: 14px; }
+  .mkt-table { table-layout: fixed; }
+  .mkt-table th, .mkt-table td { padding: 8px 4px; font-size: 0.75rem; }
   .mkt-table th:nth-child(3), .mkt-table td:nth-child(3) { display: none; }
+  .mkt-table th:nth-child(1) { width: 25%; }
+  .mkt-table th:nth-child(2) { width: 18%; }
+  .mkt-table th:nth-child(4) { width: 19%; }
+  .mkt-table th:nth-child(5) { width: 38%; }
+  .mkt-table .qty-in { width: 100%; max-width: 48px; padding: 6px 2px; }
+  .mkt-table .action-row { gap: 3px; }
+  .mkt-table .btn { padding: 6px; }
 }
 @media (max-width: 420px) {
   .mode-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-  .stat-chip .lbl { display: none; }
+  .stat-chip .lbl { font-size: 0.58rem; }
+  .game-header .logo { font-size: 0.72rem; }
+  .stat-chip { padding: 4px 6px; }
+  .mkt-table .item-emoji { font-size: 0.95rem; margin-left: 0; }
 }
 
 /* ===== PERFORMANCE MODE ===== */
@@ -1503,17 +1546,21 @@ select.auth-input { cursor: pointer; }
     <div class="left-panel">
       <div class="section-lbl">ناوبری</div>
       <button class="nav-item active" onclick="showTab('market')" id="nav-market">
-        <span class="nav-icon">🏪</span> بازار محلی
+        <span class="nav-icon">🏪</span> <span class="nav-label"><span class="nav-label-desktop">بازار محلی</span><span class="nav-label-mobile">بازار</span></span>
       </button>
       <button class="nav-item" onclick="showTab('browser')" id="nav-browser">
-        <span class="nav-icon">🌐</span> مرورگر
+        <span class="nav-icon">🌐</span> <span class="nav-label">مرورگر</span>
         <span id="browserNetBadge" style="font-size:0.65rem; color:var(--red2); margin-right:auto;">📵</span>
       </button>
       <button class="nav-item" onclick="showTab('warehouse')" id="nav-warehouse">
-        <span class="nav-icon">📦</span> انبار
+        <span class="nav-icon">📦</span> <span class="nav-label">انبار</span>
       </button>
       <button class="nav-item" onclick="showTab('internet')" id="nav-internet">
-        <span class="nav-icon">📡</span> خرید اینترنت
+        <span class="nav-icon">📡</span> <span class="nav-label"><span class="nav-label-desktop">خرید اینترنت</span><span class="nav-label-mobile">اینترنت</span></span>
+      </button>
+
+      <button class="nav-item nav-status" onclick="showTab('status')" id="nav-status">
+        <span class="nav-icon">📊</span> <span class="nav-label">وضعیت</span>
       </button>
 
       <hr class="section-sep">
@@ -1547,7 +1594,7 @@ select.auth-input { cursor: pointer; }
     </div>
 
     <!-- CENTER PANEL -->
-    <div class="center-panel" id="centerPanel">
+    <div class="center-panel" id="centerPanel" tabindex="0" role="region" aria-label="محتوای بازی">
 
       <!-- MARKET TAB -->
       <div id="tab-market">
@@ -1558,7 +1605,7 @@ select.auth-input { cursor: pointer; }
           🎲 <span id="eventMsg"></span>
         </div>
 
-        <div class="card">
+        <div class="card market-card">
           <div class="card-title"><span>🏪</span> بازار امروز — <span class="c-gold" id="dayLbl">روز ۱</span></div>
           <table class="mkt-table">
             <thead>
@@ -1570,7 +1617,7 @@ select.auth-input { cursor: pointer; }
           </table>
         </div>
 
-        <div class="card">
+        <div class="card market-log-card">
           <div class="card-title"><span>📰</span> رویدادهای اخیر</div>
           <div class="event-log" id="eventLog"></div>
         </div>
@@ -1661,7 +1708,7 @@ select.auth-input { cursor: pointer; }
     </div>
 
     <!-- RIGHT PANEL -->
-    <div class="right-panel">
+    <div class="right-panel" tabindex="0" role="region" aria-label="وضعیت بازی">
       <div class="section-lbl" id="rankingLabel" style="display:none;">🏆 رنکینگ امروز</div>
       <div id="rankingPanel" style="display:none;"></div>
 
@@ -3714,6 +3761,14 @@ function renderChart() {
 // TABS
 // =========================================================
 function showTab(tab) {
+  const gameUI = document.getElementById('gameUI');
+  if(tab === 'status') {
+    gameUI.dataset.mobilePanel = 'status';
+    document.querySelectorAll('.left-panel .nav-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('nav-status').classList.add('active');
+    document.querySelector('.right-panel').scrollTop = 0;
+    return;
+  }
   if(tab === 'browser' && G.internet <= 0) {
     toast('📡 برای استفاده از مرورگر باید اینترنت داشته باشی!', 'bad', 3000);
     document.getElementById('nav-internet')?.classList.add('highlight-tutorial');
@@ -3721,6 +3776,9 @@ function showTab(tab) {
     return;
   }
 
+  delete gameUI.dataset.mobilePanel;
+  document.getElementById('nav-status').classList.remove('active');
+  document.getElementById('centerPanel').scrollTop = 0;
   ['market','browser','warehouse','internet'].forEach(t => {
     document.getElementById(`tab-${t}`)?.classList.toggle('hidden', t!==tab);
     document.getElementById(`nav-${t}`)?.classList.toggle('active', t===tab);
@@ -3730,6 +3788,16 @@ function showTab(tab) {
   if(tab==='browser') showBTab(currentBTab);
   if(tab==='internet') renderNetDisplay();
 }
+
+// Leaving the compact layout restores the last real game tab.
+window.addEventListener('resize', () => {
+  const ui = document.getElementById('gameUI');
+  if(window.innerWidth > 900 && ui.dataset.mobilePanel === 'status') {
+    delete ui.dataset.mobilePanel;
+    document.getElementById('nav-status').classList.remove('active');
+    document.getElementById(`nav-${currentTab}`)?.classList.add('active');
+  }
+});
 
 function showBTab(tab) {
   ['web','dark','chart','cal'].forEach(t=>{
@@ -4187,7 +4255,7 @@ async function nextDayOnline() {
 
   const btn = document.getElementById('nextDayBtn');
   btn.disabled = true;
-  btn.textContent = '⏳ در حال هماهنگی...';
+  btn.textContent = '⏳ هماهنگی...';
 
   const { ok, data } = await callAuthFunction('match-next-day', {
     matchId: G._onlineMatchId,
@@ -4233,7 +4301,7 @@ async function nextDayOnline() {
 
 function showWaitingForOpponent(secondsLeft) {
   const btn = document.getElementById('nextDayBtn');
-  btn.textContent = `⏳ منتظر حریف... (${P(secondsLeft??60)})`;
+  btn.textContent = `⏳ انتظار (${P(secondsLeft??60)})`;
   toast('⏳ منتظر حریف هستیم — حداکثر ۶۰ ثانیه', 'info', 2200);
 
   if(onlineWaitInterval) clearInterval(onlineWaitInterval);
@@ -4255,7 +4323,7 @@ function showWaitingForOpponent(secondsLeft) {
       clearInterval(onlineWaitInterval); onlineWaitInterval = null;
       applyOnlineDayAdvance(data.gameState);
     } else if(data.waitingForOpponent && data.secondsLeft != null) {
-      btn.textContent = `⏳ منتظر حریف... (${P(data.secondsLeft)})`;
+      btn.textContent = `⏳ انتظار (${P(data.secondsLeft)})`;
       if(data.secondsLeft <= 0) {
         clearInterval(onlineWaitInterval); onlineWaitInterval = null;
         nextDayOnline(); // سرور باید خودش advance کنه — finalize
