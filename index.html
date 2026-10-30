@@ -1762,6 +1762,18 @@ function getClientId() {
 
 async function callAuthFunction(name, body) {
   try {
+    // Multiplayer runs in transactional Postgres RPCs. The previous Edge
+    // Function deployments failed to boot and could not answer even CORS.
+    const rpc = name === 'match-join' ? 'bazaar_match_join' : name === 'match-next-day' ? 'bazaar_match_turn' : null;
+    if(rpc) {
+      if(!sb) return { ok: false, status: 0, data: { error: 'کتابخانه اتصال بارگذاری نشد. صفحه را تازه کن.' } };
+      const { data, error } = await sb.rpc(rpc, { body });
+      if(error) {
+        console.error('Multiplayer RPC failed:', rpc, error);
+        return { ok: false, status: Number(error.status) || 0, data: { error: 'ارتباط با سرور بازی برقرار نشد. دوباره تلاش کن.' } };
+      }
+      return { ok: !!data?.success, status: data?.success ? 200 : 400, data: data || { error: 'پاسخ سرور نامعتبر است.' } };
+    }
     const res = await fetch(`${FUNCTIONS_URL}/${name}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_KEY },
@@ -2240,6 +2252,7 @@ function selectOnlineMode(mode) {
 let randomPollInterval = null;
 let mmTimerInterval = null;
 let mmStartTime = 0;
+let mmRequestToken = 0;
 
 function startMmTimer() {
   mmStartTime = Date.now();
@@ -2265,6 +2278,8 @@ function resetMmUi() {
 
 async function joinRandomMatch() {
   if(!currentUser) { toast('❌ ابتدا وارد شو', 'bad'); return; }
+  const requestToken = ++mmRequestToken;
+  const userId = currentUser.id;
 
   document.getElementById('matchmakingRandomStart').classList.add('hidden');
   document.getElementById('matchmakingWaiting').classList.remove('hidden');
@@ -2278,6 +2293,12 @@ async function joinRandomMatch() {
     username: currentProfile?.username || 'بازیکن'
   });
 
+  if(requestToken !== mmRequestToken) {
+    if(ok && data.status === 'waiting') callAuthFunction('match-join', { action:'cancel', matchId:data.matchId, userId });
+    // An already active match remains resumable from the menu.
+    if(ok && data.status === 'active') checkResumeMatches();
+    return;
+  }
   if(!ok) {
     stopMmTimer();
     resetMmUi();
@@ -2299,7 +2320,10 @@ async function joinRandomMatch() {
     stopMmTimer();
     document.getElementById('matchmakingStatus').textContent = '✅ حریف پیدا شد!';
     document.getElementById('matchmakingCount').textContent = '۲ از ۲ نفر';
-    setTimeout(() => startOnlineMatch(data.matchId, false), 900);
+    setTimeout(() => {
+      if(requestToken === mmRequestToken) startOnlineMatch(data.matchId, false);
+      else checkResumeMatches();
+    }, 900);
     return;
   }
 
@@ -2322,6 +2346,8 @@ function challengeFriend(friendId, friendUsername) {
 
 async function sendDuelInvite() {
   if(!currentUser || !pendingChallengeFriendId) return;
+  const requestToken = ++mmRequestToken;
+  const userId = currentUser.id;
 
   document.getElementById('friendDuelOverlay').classList.add('hidden');
   document.getElementById('friendWaitingOverlay').classList.remove('hidden');
@@ -2336,6 +2362,10 @@ async function sendDuelInvite() {
     mode: selectedOnlineMode
   });
 
+  if(requestToken !== mmRequestToken) {
+    if(ok && data.status === 'waiting') callAuthFunction('match-join', { action:'cancel', matchId:data.matchId, userId });
+    return;
+  }
   if(!ok) {
     stopMmTimer();
     document.getElementById('friendWaitingOverlay').classList.add('hidden');
@@ -2353,7 +2383,9 @@ function startWaitingPoll(matchId, isPlayer1, ctx) {
   if(randomPollInterval) clearInterval(randomPollInterval);
   randomPollInterval = setInterval(async () => {
     if(!sb) return;
-    const { data: m } = await sb.from('matches').select('id,status').eq('id', matchId).maybeSingle();
+    const { data: m, error } = await sb.from('matches').select('id,status').eq('id', matchId).maybeSingle();
+    // A transient network failure is not a deleted match.
+    if(error) return;
 
     if(m && m.status === 'active') {
       clearInterval(randomPollInterval); randomPollInterval = null;
@@ -2400,6 +2432,7 @@ function startWaitingPoll(matchId, isPlayer1, ctx) {
 }
 
 async function cancelMatchmaking() {
+  ++mmRequestToken;
   if(randomPollInterval) { clearInterval(randomPollInterval); randomPollInterval = null; }
   stopMmTimer();
   const mid = currentMatchId;
@@ -2965,13 +2998,16 @@ function registerServiceWorker() {
 window.addEventListener('pagehide', () => {
   try {
     if(G && G._onlineMatchId && !G._matchFinished) {
-      const payload = JSON.stringify({
+      const payload = JSON.stringify({ body: {
         matchId: G._onlineMatchId, playerKey: G._playerKey,
         playerState: buildPlayerState(), action: 'sync',
-      });
-      if(navigator.sendBeacon) {
-        navigator.sendBeacon(`${FUNCTIONS_URL}/match-next-day`, new Blob([payload], { type:'application/json' }));
-      }
+      }});
+      // sendBeacon cannot attach the API key required by PostgREST.
+      fetch(`${SUPABASE_URL}/rest/v1/rpc/bazaar_match_turn`, {
+        method: 'POST', keepalive: true,
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+        body: payload,
+      }).catch(() => {});
     }
   } catch(e) {}
 });
