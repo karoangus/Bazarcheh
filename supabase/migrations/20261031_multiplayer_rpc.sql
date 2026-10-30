@@ -26,7 +26,7 @@ create or replace function public.bazaar_match_join(body jsonb)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   action text := body->>'action'; uid uuid := (body->>'userId')::uuid;
-  mid uuid; fid uuid; mode text; m public.matches%rowtype; gs jsonb;
+  mid uuid; fid uuid; v_mode text; m public.matches%rowtype;
 begin
   if uid is null then return jsonb_build_object('error','کاربر مشخص نیست'); end if;
   -- Serialize queue selection and insertion so simultaneous arrivals cannot
@@ -46,11 +46,11 @@ begin
     insert into public.matches(player1_id,mode,type,status,game_state) values(uid,'hard','random','waiting',public.bazaar_initial_state('hard',body->>'username')) returning * into m;
     return jsonb_build_object('success',true,'matchId',m.id,'isPlayer1',true,'gameState',m.game_state,'status','waiting');
   elsif action='create-friend' then
-    fid := (body->>'friendId')::uuid; mode := body->>'mode';
-    if fid is null or fid=uid or mode not in ('easy','medium','hard','pro') or mode is null then return jsonb_build_object('error','درخواست نامعتبر'); end if;
+    fid := (body->>'friendId')::uuid; v_mode := body->>'mode';
+    if fid is null or fid=uid or v_mode not in ('easy','medium','hard','pro') or v_mode is null then return jsonb_build_object('error','درخواست نامعتبر'); end if;
     select * into m from public.matches where status='waiting' and type='friend' and player1_id=uid and player2_id=fid and created_at >= (now() at time zone 'utc') - interval '5 minutes' order by created_at desc limit 1;
     if not found then
-      insert into public.matches(player1_id,player2_id,mode,type,status,game_state) values(uid,fid,mode,'friend','waiting',public.bazaar_initial_state(mode,body->>'username')) returning * into m;
+      insert into public.matches(player1_id,player2_id,mode,type,status,game_state) values(uid,fid,v_mode,'friend','waiting',public.bazaar_initial_state(v_mode,body->>'username')) returning * into m;
     end if;
     return jsonb_build_object('success',true,'matchId',m.id,'gameState',m.game_state,'status','waiting');
   elsif action='resume-list' then
